@@ -1,0 +1,190 @@
+// Sorelly Admin · montagem e bipagem — domain/financeiro.js
+// Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
+
+// Contas a pagar: lançamento manual por mês, só 2 números (Pago e A pagar); o Total é sempre calculado (pago+apagar).
+// Meses passados fechados ficam "fixado" (não editam mais); meses futuros só têm a previsão em "apagar".
+var MESES_LONGO = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+var CONTAS_PAGAR_DEMO = {"2026": {
+  0:{pago:1386339.82, apagar:0, fixado:true}, 1:{pago:1029580.06, apagar:0, fixado:true}, 2:{pago:1160323.33, apagar:0, fixado:true},
+  3:{pago:1242369.07, apagar:0, fixado:true}, 4:{pago:1375428.85, apagar:0, fixado:true}, 5:{pago:1433820.45, apagar:0, fixado:true},
+  6:{pago:1369387.93, apagar:0, fixado:true}, 7:{pago:1551292.19, apagar:0, fixado:false},
+  8:{pago:1320809.45, apagar:116298.61, fixado:false},   // mês atual (demonstração: setembro)
+  9:{pago:0, apagar:1423701.86, fixado:false}, 10:{pago:0, apagar:1420518.46, fixado:false}, 11:{pago:0, apagar:1438282.20, fixado:false}
+}};
+// Previsão de faturamento: lançamento diário, sempre referente ao DIA ANTERIOR (Amanda de manhã; se faltar, o Lucas lança).
+// "revendedoras" é a contagem TOTAL naquele dia (não soma; é o número absoluto, como na exportação de revendedoras diárias).
+var FATURAMENTO_DIARIO_DEMO = {   // dados reais passados pelo usuário; uma data por mês fechado (a última), com o total do mês inteiro
+  "2026-01-31":{recebido:1392910.06, acertos:1654, revendedoras:1827},
+  "2026-02-28":{recebido:1012357.60, acertos:1530, revendedoras:1750},
+  "2026-03-31":{recebido:1157120.52, acertos:1635, revendedoras:1791},
+  "2026-04-30":{recebido:1263754.42, acertos:1653, revendedoras:1780},
+  "2026-05-31":{recebido:1416595.39, acertos:1749, revendedoras:1836},
+  "2026-06-30":{recebido:1318670.29, acertos:1764, revendedoras:1902},
+  "2026-07-31":{recebido:1214587.01, acertos:1669, revendedoras:1834},
+  "2026-08-31":{recebido:1361845.04, acertos:1741, revendedoras:1834},
+  "2026-09-27":{recebido:1139192.78, acertos:1399, revendedoras:2007},
+  "2026-09-28":{recebido:1152731.48, acertos:1413, revendedoras:2007}   // 28/09/2026, mês em andamento — sem contagem nova de revendedoras nesta data, mantido o último número real (27/09)
+};
+// Meta mensal (vem do setor de Agendamento): revendedoras com kit no início do mês e quantos acertos eles previram para o mês inteiro.
+// Histórico de abertura por mês, passado pelo usuário (índice do mês: 0=Jan ... 8=Set).
+var META_MENSAL_DEMO = {"2026": {
+  0:{base:1827, previstos:1754}, 1:{base:1750, previstos:1707}, 2:{base:1791, previstos:1757}, 3:{base:1780, previstos:1667},
+  4:{base:1836, previstos:1763}, 5:{base:1902, previstos:1826}, 6:{base:1834, previstos:1793}, 7:{base:1834, previstos:1815},
+  8:{base:1932, previstos:1889}
+}};
+// Vendido na ponta (relatório de notas fiscais), passado pelo usuário mês a mês. "comBrindes" = venda com brindes e trocas;
+// "semBrinde" = preço de venda sem brinde. Custo (com/sem brinde) ainda não veio — fica de fora até ele mandar.
+// TES pra puxar o relatório contando com brindes: S001/S002 (atual) · até fev/2026: S0501/S0502.
+var VENDIDO_PONTA_DEMO = {"2026": {
+  1:{comBrindes:2527330.59, semBrinde:1553141.43}, 2:{comBrindes:1829615.14, semBrinde:1779668.14}, 3:{comBrindes:2129250.02, semBrinde:1966019.75},
+  4:{comBrindes:2341501.15, semBrinde:2194269.12}, 5:{comBrindes:2577440.48, semBrinde:2041566.18}, 6:{comBrindes:2722091.60, semBrinde:1950157.95}
+}};
+// Contas pagas: lançamento diário por CNPJ — é uma FOTO do dia (não altera a grade mensal de Contas a pagar, que é lançada
+// à parte). O total pago é sempre a soma dos CNPJs + "contas por fora"; o faturado do dia entra junto, por enquanto também
+// digitado aqui (dá pra reavaliar puxar automaticamente da Previsão de Faturamento, é só pedir). Clonado dos prints do
+// admin que o usuário mandou (2026-09-28) — a fonte real desse admin não está neste projeto.
+var CNPJS_CONTAS_PAGAS = ["34","46","59","67"];
+var CONTAS_PAGAS_DIARIO_DEMO = {
+  "2026-09-01":{cnpjs:{34:16121.50,46:18009.09,59:88022.00,67:0}, contasPorFora:10080.10, faturado:7266.80},
+  "2026-09-02":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:16195.29, faturado:10394.60},
+  "2026-09-03":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:5853.00, faturado:22489.80},
+  "2026-09-04":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:109403.18, faturado:30661.35},
+  "2026-09-08":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:525.00, faturado:0},
+  "2026-09-09":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:52170.72, faturado:49026.30},
+  "2026-09-10":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:126025.32, faturado:150141.65},
+  "2026-09-11":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:74937.41, faturado:108388.99},
+  "2026-09-15":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:36565.86, faturado:107315.13},
+  "2026-09-16":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:3471.23, faturado:55653.25},
+  "2026-09-17":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:44746.90, faturado:80623.71},
+  "2026-09-18":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:153963.28, faturado:56640.15},
+  "2026-09-20":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:50216.54, faturado:0},
+  "2026-09-21":{cnpjs:{34:14315.48,46:24733.86,59:88412.13,67:4428.60}, contasPorFora:16053.61, faturado:98833.00},
+  "2026-09-22":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:54712.95, faturado:0},
+  "2026-09-23":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:48210.36, faturado:0},
+  "2026-09-24":{cnpjs:{34:1517.69,46:4060.29,59:3052.82,67:0}, contasPorFora:3518.79, faturado:0},
+  "2026-09-25":{cnpjs:{34:2705.31,46:1851.26,59:2632.56,67:0}, contasPorFora:41539.85, faturado:0},
+  "2026-09-28":{cnpjs:{34:0,46:4391.14,59:0,67:0}, contasPorFora:0, faturado:0},
+  "2026-09-30":{cnpjs:{34:0,46:0,59:0,67:0}, contasPorFora:146564.88, faturado:0}
+};
+// ── Previsão de Faturamento vs Contas a Pagar: lançamento diário (sempre do DIA ANTERIOR), ligado à tela de Contas a pagar ──
+function isoOntem(){ var d = new Date(); d.setDate(d.getDate()-1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+// Crescimento real de revendedoras, calculado a partir do CSV que o usuário mandou (revendedoras-diarias, até 27/09/2026 = 2007).
+// Cada valor é a média de variação líquida por dia na janela. Para atualizar, é só mandar um CSV novo.
+var CRESCIMENTO_REVENDEDORAS = [{lb:"7 dias", dia:1.00},{lb:"15 dias", dia:2.20},{lb:"30 dias", dia:1.87},
+  {lb:"60 dias", dia:2.52},{lb:"90 dias", dia:1.54},{lb:"Último mês (ago)", dia:2.87}];
+// meses FECHADOS (antes do mês atual) que já têm base/previstos (Agendamento) e faturamento lançado — usados para calcular as médias históricas
+function mesesFechados(s, anoStr, mesAtual){
+  var out = [];
+  for(var i=0;i<mesAtual;i++){
+    var meta = ((s.metaMensal||{})[anoStr]||{})[i];
+    var chaves = Object.keys(s.faturamentoDiario||{}).filter(function(k){ return k.slice(0,7)===anoStr+"-"+String(i+1).padStart(2,"0"); }).sort();
+    var fat = chaves.length ? s.faturamentoDiario[chaves[chaves.length-1]] : null;
+    if(meta && meta.base>0 && fat) out.push({mes:i, base:meta.base, previstos:meta.previstos, realizados:fat.acertos, recebido:fat.recebido});
+  }
+  return out;
+}
+// Ajuste sazonal sobre a média de faturamento por revendedora, mês a mês (0=Jan ... 11=Dez). Novembro e dezembro vendem mais
+// (fim de ano); janeiro cai um pouco na volta; fevereiro ainda vem mais fraco. Provisório — o usuário vai confirmar/ajustar
+// com dados reais de anos anteriores assim que mandar. Usado tanto no ano corrente quanto em anos seguintes projetados.
+var FATOR_SAZONAL = {10:1.05, 11:1.10, 0:1.10, 1:0.90};
+// projeta o ano inteiro: meses fechados usam o real; o mês atual usa o lançamento mais recente (parcial); os futuros usam a cadeia
+// revendedoras → previstos → realizados → faturamento, com as proporções médias (ponderadas pelo tamanho de cada mês) dos meses fechados.
+// metaPct (94/95/96, escolhido na tela) troca a conversão previstos→realizados pela meta assumida; sem ele, usa a média histórica.
+function projetarAno(s, anoStr, janelaIdx, metaPct){
+  var hoje = new Date(), mesAtual = hoje.getMonth();
+  var fechados = mesesFechados(s, anoStr, mesAtual);
+  var somaBase=0, somaPrevistos=0, somaRealizados=0, somaRecebido=0;
+  fechados.forEach(function(m){ somaBase+=m.base; somaPrevistos+=m.previstos; somaRealizados+=m.realizados; somaRecebido+=m.recebido; });
+  var ratioPB = somaBase>0 ? somaPrevistos/somaBase : 0;
+  var ratioRP = somaPrevistos>0 ? somaRealizados/somaPrevistos : 0;
+  var ratioRPUsado = metaPct ? metaPct/100 : ratioRP;   // o que realmente entra na conta dos meses futuros
+  var mediaAcertoHist = somaRealizados>0 ? somaRecebido/somaRealizados : 0;
+  var entradas = Object.keys(s.faturamentoDiario||{}).sort();
+  var revDatas = Object.keys(s.revendedorasDiario||{}).sort();
+  var revHoje = revDatas.length ? s.revendedorasDiario[revDatas[revDatas.length-1]] : 0;
+  var mFechado = {}; fechados.forEach(function(m){ mFechado[m.mes]=m; });
+  var porMes = [];
+  for(var i=0;i<12;i++){
+    if(mFechado[i]){ porMes.push({mes:i, valor:mFechado[i].recebido, tipo:"real"}); continue; }
+    if(i===mesAtual){
+      var doMesAtual = entradas.filter(function(k){ return k.slice(0,7)===anoStr+"-"+String(i+1).padStart(2,"0"); });
+      var v = doMesAtual.length ? s.faturamentoDiario[doMesAtual[doMesAtual.length-1]].recebido : 0;
+      porMes.push({mes:i, valor:v, tipo:"atual"}); continue;
+    }
+    if(i<mesAtual){ porMes.push({mes:i, valor:0, tipo:"real"}); continue; }
+    var dia1 = new Date(Number(anoStr), i, 1), dias = Math.round((dia1-hoje)/86400000);
+    var revProj = revHoje + CRESCIMENTO_REVENDEDORAS[janelaIdx].dia*dias;
+    var fatorSazonal = FATOR_SAZONAL[i] || 1;   // aplicado sobre a média de faturamento por revendedora, não sobre a contagem de previstos
+    var prevProj = Math.round(revProj*ratioPB), realProj = Math.round(prevProj*ratioRPUsado), fatProj = realProj*mediaAcertoHist*fatorSazonal;
+    porMes.push({mes:i, valor:fatProj, tipo:"projetado", revendedoras:Math.round(revProj), previstos:prevProj, realizados:realProj, sazonal:fatorSazonal!==1?fatorSazonal:null});
+  }
+  return {porMes:porMes, ratioPB:ratioPB, ratioRP:ratioRP, ratioRPUsado:ratioRPUsado, mediaAcertoHist:mediaAcertoHist, fechados:fechados, revHoje:revHoje, mesAtual:mesAtual};
+}
+// Igual ao projetarAno, mas encadeia vários anos seguidos (usado na tabela "Ano inteiro, mês a mês", que agora também
+// mostra o ano seguinte). Os meses fechados/realizados só existem no ano corrente (onde há dados reais); dali em diante
+// é tudo projeção. anoInicial+totalMeses definem o intervalo (ex.: anoInicial=2026, totalMeses=24 → 2026 e 2027 inteiros).
+function projetarVariosAnos(s, anoInicial, totalMeses, janelaIdx, metaPct){
+  var hoje = new Date(), anoAtual = hoje.getFullYear(), mesAtual = hoje.getMonth(), anoAtualStr = String(anoAtual);
+  var fechados = mesesFechados(s, anoAtualStr, mesAtual);
+  var somaBase=0, somaPrevistos=0, somaRealizados=0, somaRecebido=0;
+  fechados.forEach(function(m){ somaBase+=m.base; somaPrevistos+=m.previstos; somaRealizados+=m.realizados; somaRecebido+=m.recebido; });
+  var ratioPB = somaBase>0 ? somaPrevistos/somaBase : 0;
+  var ratioRP = somaPrevistos>0 ? somaRealizados/somaPrevistos : 0;
+  var ratioRPUsado = metaPct ? metaPct/100 : ratioRP;
+  var mediaAcertoHist = somaRealizados>0 ? somaRecebido/somaRealizados : 0;
+  var entradas = Object.keys(s.faturamentoDiario||{}).sort();
+  var revDatas = Object.keys(s.revendedorasDiario||{}).sort();
+  var revHoje = revDatas.length ? s.revendedorasDiario[revDatas[revDatas.length-1]] : 0;
+  var mFechado = {}; fechados.forEach(function(m){ mFechado[m.mes]=m; });
+  var porMes = [];
+  for(var k=0;k<totalMeses;k++){
+    var anoI = anoInicial + Math.floor(k/12), i = k%12;
+    if(anoI===anoAtual && mFechado[i]){ porMes.push({ano:anoI, mes:i, valor:mFechado[i].recebido, tipo:"real", revendedoras:mFechado[i].base, realizados:mFechado[i].realizados}); continue; }
+    if(anoI===anoAtual && i===mesAtual){
+      var doMesAtual = entradas.filter(function(k2){ return k2.slice(0,7)===anoAtualStr+"-"+String(i+1).padStart(2,"0"); });
+      var ult = doMesAtual.length ? s.faturamentoDiario[doMesAtual[doMesAtual.length-1]] : null;
+      porMes.push({ano:anoI, mes:i, valor: ult?ult.recebido:0, tipo:"atual", revendedoras:revHoje, realizados: ult?ult.acertos:0}); continue;
+    }
+    if(anoI===anoAtual && i<mesAtual){ porMes.push({ano:anoI, mes:i, valor:0, tipo:"real", revendedoras:0, realizados:0}); continue; }
+    var dia1 = new Date(anoI, i, 1), dias = Math.round((dia1-hoje)/86400000);
+    var revProj = revHoje + CRESCIMENTO_REVENDEDORAS[janelaIdx].dia*dias;
+    var fatorSazonal = FATOR_SAZONAL[i] || 1;
+    var prevProj = Math.round(revProj*ratioPB), realProj = Math.round(prevProj*ratioRPUsado), fatProj = realProj*mediaAcertoHist*fatorSazonal;
+    porMes.push({ano:anoI, mes:i, valor:fatProj, tipo:"projetado", revendedoras:Math.round(revProj), previstos:prevProj, realizados:realProj, sazonal:fatorSazonal!==1?fatorSazonal:null});
+  }
+  return {porMes:porMes, ratioPB:ratioPB, ratioRP:ratioRP, ratioRPUsado:ratioRPUsado, mediaAcertoHist:mediaAcertoHist, fechados:fechados, revHoje:revHoje, mesAtual:mesAtual};
+}
+// janelas de visualização do gráfico de revendedoras: quantos dias reais mostrar, além da projeção (dia 1 de cada mês futuro)
+var JANELAS_GRAFICO_REV = [{lb:"7 dias", ultimosDias:7},{lb:"15 dias", ultimosDias:15},{lb:"30 dias", ultimosDias:30},
+  {lb:"60 dias", ultimosDias:60},{lb:"90 dias", ultimosDias:90},{lb:"Mês atual", mesAtual:true},{lb:"História completa", tudo:true}];
+// início do ano várias revendedoras saem (fim de contrato, balanço); em fevereiro o crescimento normal já volta a valer —
+// por enquanto um número fixo, o usuário vai confirmar com dados reais de janeiros anteriores
+var QUEDA_JANEIRO = 100;
+// monta os pontos (dia a dia) da quantidade de revendedoras, pra usar no gráfico. opts.ultimosDias/mesAtual/tudo escolhem a janela
+// de dias reais mostrados (padrão: tudo); opts.desde filtra por data (usado na Visão Geral, só o ano atual); opts.projetarMeses
+// acrescenta um ponto por mês futuro (dia 1), usando a janela de crescimento escolhida (opts.janela); pode passar do fim do
+// ano — em janeiro (de qualquer ano) entra a queda sazonal, e o crescimento normal volta a partir de fevereiro.
+function pontosRevendedoras(s, opts){
+  opts = opts || {};
+  var hist = s.revendedorasDiario || {};
+  var todasDatas = Object.keys(hist).sort();
+  var datas = todasDatas;
+  if(opts.ultimosDias) datas = todasDatas.slice(-opts.ultimosDias);
+  else if(opts.mesAtual){ var hoje0 = new Date(), ym = hoje0.getFullYear()+"-"+String(hoje0.getMonth()+1).padStart(2,"0");
+    datas = todasDatas.filter(function(dt){ return dt.slice(0,7)===ym; }); }
+  else if(opts.desde) datas = todasDatas.filter(function(dt){ return dt>=opts.desde; });
+  var pts = datas.map(function(dt){ return {data:dt, v:hist[dt], tipo:"real"}; });
+  if(opts.projetarMeses && todasDatas.length){
+    var ultimaData = todasDatas[todasDatas.length-1], ultimoValor = hist[ultimaData], hoje = new Date(ultimaData+"T00:00:00");
+    for(var mf=1; mf<=opts.projetarMeses; mf++){
+      var alvo = new Date(hoje.getFullYear(), hoje.getMonth()+mf, 1);
+      var dias = Math.round((alvo-hoje)/86400000);
+      var v = Math.round(ultimoValor+CRESCIMENTO_REVENDEDORAS[opts.janela].dia*dias);
+      if(alvo.getMonth()===0) v -= QUEDA_JANEIRO;
+      pts.push({data:alvo.toISOString().slice(0,10), v:v, tipo:"projetado"});
+    }
+  }
+  return pts;
+}
+
+export { MESES_LONGO, CONTAS_PAGAR_DEMO, FATURAMENTO_DIARIO_DEMO, META_MENSAL_DEMO, VENDIDO_PONTA_DEMO, CNPJS_CONTAS_PAGAS, CONTAS_PAGAS_DIARIO_DEMO, isoOntem, CRESCIMENTO_REVENDEDORAS, mesesFechados, FATOR_SAZONAL, projetarAno, projetarVariosAnos, JANELAS_GRAFICO_REV, QUEDA_JANEIRO, pontosRevendedoras };
