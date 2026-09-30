@@ -52,24 +52,13 @@ var SETORES = [
       T("vendas","Análise de vendas"), T("consolidado"), T("regras"),
       E("Metas", ["Sistema de metas do admin (vendas dos meses anteriores + regras)"]),
       T("equipe"), T("registros"), T("relatorios")]},
+    {nome:"Representantes", telas:[
+      B("Consolidado"), B("Comissões"), B("Inadimplência"), B("Regras"), T("celrep","App do representante"), B("Configurações")]},
     {nome:"Produção", telas:[B("Produção Sorelly"), B("Produção Serenity")]}]},
   {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", areas:[
     {nome:"Estoque de peças", telas:[E("Estoque Sorelly", ["Estoque Sorelly → Resumo geral e Preenchimento (estoque geral de peças)"]), B("Cadastro de peças")]},
     {nome:"Estoque de materiais", telas:[B("Estoque de materiais")]},
     {nome:"Compras", telas:[B("Compras Sorelly"), B("Fornecedores de banho"), B("Fornecedores de brutos")]}]},
-  {id:"representantes", nome:"Agendamentos", ic:"agenda", cor:"#F59E0B", areas:[
-    {nome:"Acertos", telas:[
-      I("painelacertos","Painel dos acertos",["Acertos → Painel","Acertos → Análises"]),
-      E("Representantes", ["Acertos → Representantes (gestão das representantes)"]),
-      E("Abertura do mês", ["Acertos → Abertura do Mês"]),
-      E("Histórico de acertos", ["Acertos → Histórico"])]},
-    {nome:"Gestão de consignado", telas:[
-      E("Consolidado do consignado", ["Gestão de consignado → Consolidado"]),
-      E("Comissões", ["Gestão de consignado → Comissões (liga com a tabela de comissões e brindes da calculadora)"]),
-      E("Inadimplência", ["Gestão de consignado → Inadimplência"]),
-      E("Relatórios do consignado", ["Gestão de consignado → Relatórios"]),
-      E("Regras do consignado", ["Gestão de consignado → Regras"])]},
-    {nome:"Agenda e bônus", telas:[B("Agenda de retiradas"), B("Bônus das representantes")]}]},
   {id:"encomendas", nome:"Encomendas e reposições", ic:"caminhao", cor:"#14B8A6", areas:[
     {nome:"Encomendas e reposições", telas:[B("Encomendas"), B("Reposições")]},
     {nome:"Entregas", telas:[B("Entregas")]},

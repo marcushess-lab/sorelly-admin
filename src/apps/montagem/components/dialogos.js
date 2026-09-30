@@ -1,6 +1,7 @@
 // Sorelly Admin · montagem e bipagem — components/dialogos.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { capacidadeListagem, kitsNaListagem, listagemCheia } from "@/apps/montagem/domain/regras";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -9,13 +10,17 @@ import { Modal } from "@/apps/montagem/ui/modal";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 function DlgNovoKit(p){
-  var d = use().dispatch;
+  var cx = use(), s = cx.state, d = cx.dispatch;
   var st = useState({rev:"", bairro:"", v1:0, v2:0, v3:0, prio:false}), f = st[0], set = st[1];
   function up(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); }
   var vendas = [f.v1,f.v2,f.v3].filter(function(x){return x>0;});
   var campo = function(lb, ch){ return e("label",{className:"flex flex-col gap-1.5"}, e("span",{className:"text-sm font-medium"}, lb), ch); };
-  return e(Modal,{open:!!p.lid, titulo:"Kit de \u00faltima hora", sub:"Entra como aguardando valor at\u00e9 a Deysiane confirmar", confirmar:"Incluir kit", icone:"plus",
-      desabilitado:!f.rev.trim(), onClose:p.fechar,
+  var lig = p.lid && s.listagens.find(function(x){return x.id===p.lid;});
+  var cheia = lig && listagemCheia(s, p.lid);
+  return e(Modal,{open:!!p.lid, titulo:"Kit de \u00faltima hora",
+      sub: cheia ? "Listagem cheia ("+kitsNaListagem(s,p.lid)+"/"+capacidadeListagem(lig)+"): escolha outra listagem" : "Entra como aguardando valor at\u00e9 a Deysiane confirmar",
+      confirmar:"Incluir kit", icone:"plus",
+      desabilitado:!f.rev.trim() || cheia, onClose:p.fechar,
       onConfirmar:function(){ d({type:"ADD_KIT", lid:p.lid, rev:f.rev.trim(), bairro:f.bairro.trim(), vendas:vendas, prio:f.prio}); set({rev:"",bairro:"",v1:0,v2:0,v3:0,prio:false}); p.fechar(); }},
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
       campo("Revendedora", e("input",{className:INPUT, value:f.rev, onChange:function(ev){up("rev",ev.target.value);}})),

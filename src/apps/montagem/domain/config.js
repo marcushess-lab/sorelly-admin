@@ -46,9 +46,9 @@ var CFG0 = {
   limiteMarcus:4000,
   // Calculadora de kits: média acima deste valor → obrigatório mandar a análise de vendas (prints) antes de liberar
   limiteAnaliseVendas:2500,
-  // Comissão da revendedora e brindes pelo valor vendido (tabela da calculadora da Sorelly)
-  comissoesRev:[{min:7000,pct:45,bn:422,bb:262},{min:5000,pct:45,bn:344,bb:224},{min:2500,pct:40,bn:282,bb:168},{min:1600,pct:40,bn:188,bb:122},
-    {min:1000,pct:35,bn:112,bb:96},{min:700,pct:30,bn:74,bb:82},{min:500,pct:25,bn:44,bb:56},{min:300,pct:15,bn:0,bb:38}]
+  // Comissão da revendedora e brindes pelo valor vendido (tabela oficial do consignado — ver domain/consignado.js para a versão vigente/versionada)
+  comissoesRev:[{min:7000,pct:45,bn:442,bb:282},{min:5000,pct:45,bn:368,bb:232},{min:2500,pct:40,bn:312,bb:188},{min:1600,pct:40,bn:196,bb:144},
+    {min:1000,pct:35,bn:118,bb:122},{min:700,pct:30,bn:88,bb:96},{min:500,pct:25,bn:48,bb:68},{min:300,pct:15,bn:0,bb:0}]
 };
 function tabelaAtual(c){ return c.tabelaAtiva==="baixo" && c.tabelaKitBaixo ? c.tabelaKitBaixo : c.tabelaKit; }
 var MOTIVOS = ["Aro fora do pedido","Metal fora da propor\u00e7\u00e3o pedida","Faltou encomenda",

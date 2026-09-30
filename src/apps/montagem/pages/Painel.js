@@ -6,7 +6,7 @@ import { Fila } from "@/apps/montagem/components/fila";
 import { papelDe } from "@/apps/montagem/domain/equipe";
 import { listagemDe } from "@/apps/montagem/domain/regras";
 import { SITUACOES } from "@/apps/montagem/domain/status";
-import { BK } from "@/apps/montagem/lib/format";
+import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { BADGE } from "@/apps/montagem/ui/badge";
 import { Btn } from "@/apps/montagem/ui/button";
@@ -20,8 +20,9 @@ function AbaPainel(){
   var cx = use(), s = cx.state;
   var fl = useState({rep:"todas", busca:"", sit:"todas", ordem:"fila"}), f = fl[0], setFs = fl[1];
   var setF = function(n){ setFs(Object.assign({}, f, n)); };
-  // Kits das listagens abertas (respeitando o filtro de representante), para as contagens por situação
-  var abertos = s.kits.filter(function(k){ var l = listagemDe(s,k); return l && !l.fechada && k.status!=="precond" && (f.rep==="todas" || k.lid===f.rep); });
+  // Kits das listagens abertas de hoje (respeitando o filtro de representante), para as contagens por situação
+  var hojeISO = isoDia(new Date());
+  var abertos = s.kits.filter(function(k){ var l = listagemDe(s,k); return l && !l.fechada && (!l.data || l.data===hojeISO) && k.status!=="precond" && (f.rep==="todas" || k.lid===f.rep); });
   var chipSit = function(id, lb, qtd, tom){ var on = f.sit===id;
     return e("button",{key:id, onClick:function(){setF({sit: on && id!=="todas" ? "todas" : id});}, "aria-pressed":on,
       className:"inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-colors "+
@@ -45,7 +46,7 @@ function AbaPainel(){
               e(Icon,{n:"user", s:16, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary"}),
               e("select",{value:f.rep, "aria-label":"Representante", onChange:function(ev){setF({rep:ev.target.value});},
                   className:"h-10 cursor-pointer rounded-lg border border-primary/50 bg-primary/10 pl-9 pr-3 text-sm font-semibold outline-none hover:bg-primary/15 focus:ring-3 focus:ring-ring/50"},
-                e("option",{value:"todas"},"Todas as representantes"), s.listagens.filter(function(l){return !l.fechada;}).map(function(l){return e("option",{key:l.id, value:l.id}, l.rep);}))),
+                e("option",{value:"todas"},"Todas as representantes"), s.listagens.filter(function(l){return !l.fechada && (!l.data || l.data===hojeISO);}).map(function(l){return e("option",{key:l.id, value:l.id}, l.rep);}))),
             e("div",{className:"relative"},
               e(Icon,{n:"clock", s:16, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary"}),
               e("select",{value:f.ordem, "aria-label":"Ordenar por", onChange:function(ev){setF({ordem:ev.target.value});},

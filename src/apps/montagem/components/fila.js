@@ -8,7 +8,7 @@ import { nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
 import { filaMontagem } from "@/apps/montagem/domain/regras";
 import { SEM_KIT, SITUACOES, StatusBadge, TIPO_KIT } from "@/apps/montagem/domain/status";
 import { media3 } from "@/apps/montagem/domain/vendas";
-import { BK, hora, minutos } from "@/apps/montagem/lib/format";
+import { BK, hora, isoDia, minutos } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { BADGE } from "@/apps/montagem/ui/badge";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -27,8 +27,9 @@ function Fila(p){
   var la = useState(null), linhaAb = la[0], setLinhaAb = la[1];   // kit que a Deysiane está finalizando na linha
   var fila = filaMontagem(s);
   // Listagens concluídas saem do Painel (ficam no Consolidado)
+  var hojeISO = isoDia(new Date());
   var lists = s.listagens.slice().sort(function(a,b){return minutos(a.horario)-minutos(b.horario);})
-    .filter(function(l){return !l.fechada && (p.filtroRep==="todas" || l.id===p.filtroRep);});
+    .filter(function(l){return !l.fechada && (!l.data || l.data===hojeISO) && (p.filtroRep==="todas" || l.id===p.filtroRep);});
   var busca = (p.busca||"").toLowerCase();
   var sit = SITUACOES.find(function(x){return x.id===p.sit;});
   var mostrados = 0;

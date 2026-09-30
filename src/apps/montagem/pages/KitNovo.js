@@ -3,6 +3,7 @@
 import { TabelaEquipe } from "@/apps/montagem/components/equipe-blocos";
 import { foraDoPrazo } from "@/apps/montagem/components/kits-novos-rep";
 import { DIRETORIA, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
+import { capacidadeListagem, kitsNaListagem, listagemCheia } from "@/apps/montagem/domain/regras";
 import { BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { badge } from "@/apps/montagem/ui/badge";
@@ -40,6 +41,7 @@ function AbaKitNovo(){
         var f = form[n.id] || {}, lsRep = abertas.filter(function(l){return !n.rep || l.rep===n.rep;});
         var lidSel = f.lid || (lsRep[0] && lsRep[0].id), lsel = lidSel && s.listagens.find(function(x){return x.id===lidSel;});
         var fora = lsel && foraDoPrazo(lsel, s), aut = euDiretoria ? s.usuario : (f.aut ? +f.aut : null);
+        var cheia = lsel && listagemCheia(s, lsel.id);
         return e("tr",{key:n.id, className:TR},
           e(TD,{className:C+"font-medium truncate"}, n.nome),
           e(TD,{className:C+"truncate text-muted-foreground"}, n.cidade+" · "+n.bairro),
@@ -59,10 +61,11 @@ function AbaKitNovo(){
             : n.status==="direcionada"
               ? e("div",{className:"flex flex-nowrap items-center justify-center gap-1.5 whitespace-nowrap"},
                   e("select",{value:lidSel||"", onChange:function(ev){campo(n.id,"lid",ev.target.value);}, className:sel+" w-28", "aria-label":"Listagem"},
-                    lsRep.map(function(l){return e("option",{key:l.id, value:l.id}, l.rep+" "+l.horario);})),
+                    lsRep.map(function(l){ var cheiaL = listagemCheia(s, l.id);
+                      return e("option",{key:l.id, value:l.id, disabled:cheiaL}, l.rep+" "+l.horario+" ("+kitsNaListagem(s,l.id)+"/"+capacidadeListagem(l)+")"+(cheiaL?" · Lotada":"")); })),
                   fora && !euDiretoria && e("select",{value:f.aut||"", onChange:function(ev){campo(n.id,"aut",ev.target.value);}, className:sel+" w-32 shrink-0 border-warning/60", "aria-label":"Autorizado por", title:"Fora do prazo: precisa de autorização"},
                     e("option",{value:""},"Autorizado por"), DIRETORIA.map(function(x){return e("option",{key:x.id, value:x.id}, x.nome);})),
-                  e(Btn,{sm:true, v:"primary", ic:"plus", disabled:!lidSel || (fora && !aut), title: fora ? "Fora do prazo de "+s.cfg.prazoPedidoHoras+" h" : "",
+                  e(Btn,{sm:true, v:"primary", ic:"plus", disabled:!lidSel || cheia || (fora && !aut), title: cheia ? "Listagem cheia" : fora ? "Fora do prazo de "+s.cfg.prazoPedidoHoras+" h" : "",
                     onClick:function(){ d({type:"NOVA_INCLUIR", id:n.id, lid:lidSel, foraPrazo:fora, quem:"kitnovo", autorizador: fora ? aut : null}); }}, fora ? "Colocar (fora do prazo)" : "Colocar na listagem"))
               : e("span",{className:"text-[13px] text-success"}, "Na listagem de "+n.rep+(n.autorizadoPor ? " · aut. "+nomeDe(n.autorizadoPor) : ""))));
       })));

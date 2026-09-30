@@ -33,5 +33,19 @@ function IPhone15(p){
       e("div",{id:"app-screen", className:"flex-1 overflow-y-auto px-4 pb-10 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"}, p.children),
       e("span",{className:"absolute bottom-2 left-1/2 h-[5px] w-[124px] -translate-x-1/2 rounded-full bg-[#111]"})));
 }
+// Moldura do iPhone 17 Pro Max (tela 6,9", proporção mais alongada que o 15): usada no app da representante.
+function IPhone17ProMax(p){
+  var agora = useAgora();
+  var botao = function(lado, top, h){ return e("span",{className:"absolute w-[3px] rounded-sm bg-[#2B2B2F] "+(lado==="e"?"-left-[3px]":"-right-[3px]"), style:{top:top, height:h}}); };
+  return e("div",{className:"relative w-[372px] shrink-0 rounded-[66px] bg-[#0A0A0B] p-[10px] shadow-[0_0_0_2px_#2B2B2F,0_0_0_4px_#0A0A0B,0_40px_80px_-24px_rgba(0,0,0,.85)]"},
+    botao("e",126,32), botao("e",184,58), botao("e",254,58), botao("d",214,94),
+    e("div",{className:"app-claro relative flex h-[774px] flex-col overflow-hidden rounded-[56px] bg-[#F2F3F5]", style:IOS_VARS},
+      e("div",{className:"absolute left-1/2 top-[12px] z-20 flex h-[34px] w-[114px] -translate-x-1/2 items-center justify-end rounded-full bg-black pr-3"},
+        e("span",{className:"size-2.5 rounded-full bg-[#101624] ring-1 ring-[#1d2a44]"})),
+      e("div",{className:"barra-status flex h-[56px] shrink-0 items-center justify-between bg-[#0D0D0F] px-8 pt-1 text-[15px] font-semibold"},
+        e("span",null, hora(agora)), e(IconesStatus)),
+      e("div",{id:"app-screen", className:"flex-1 overflow-y-auto px-4 pb-10 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"}, p.children),
+      e("span",{className:"absolute bottom-2 left-1/2 h-[5px] w-[130px] -translate-x-1/2 rounded-full bg-[#111]"})));
+}
 
-export { IconesStatus, IPhone15 };
+export { IconesStatus, IPhone15, IPhone17ProMax };

@@ -22,6 +22,11 @@ function tempoMont(k, agora){
 }
 function conta(k){ return k.fimM && ["montado","bipando","bipado","retirado"].indexOf(k.status)>=0; }
 function listagemDe(s, k){ return s.listagens.find(function(l){return l.id===k.lid;}); }
+// Capacidade de uma listagem: máximo de 15 revendedoras, exceto listagens de viagem (sem limite).
+var MAX_LISTAGEM = 15;
+function capacidadeListagem(l){ return l && l.viagem ? Infinity : MAX_LISTAGEM; }
+function kitsNaListagem(s, lid){ return s.kits.filter(function(k){ return k.lid===lid; }).length; }
+function listagemCheia(s, lid){ var l = s.listagens.find(function(x){return x.id===lid;}); if(!l) return false; return kitsNaListagem(s, lid) >= capacidadeListagem(l); }
 function resumoMontadora(m, s){
   var c = s.cfg, hojeK = s.kits.filter(function(k){return k.montId===m.id && conta(k);});
   var n = m.mes.n, en = m.mes.e;
@@ -93,4 +98,4 @@ function dataPagamento(c){
 function nomeMes(){ var s = new Date().toLocaleDateString("pt-BR",{month:"long", year:"numeric"});
   return s.charAt(0).toUpperCase()+s.slice(1); }
 
-export { ehEspecial, ehAtencao, soMelhores, pecasPara, tempoMont, conta, listagemDe, resumoMontadora, resumoBipadora, rankingNota, podeAtencao, filaMontagem, proximoPara, filaBipagem, dataPagamento, nomeMes };
+export { ehEspecial, ehAtencao, soMelhores, pecasPara, tempoMont, conta, listagemDe, MAX_LISTAGEM, capacidadeListagem, kitsNaListagem, listagemCheia, resumoMontadora, resumoBipadora, rankingNota, podeAtencao, filaMontagem, proximoPara, filaBipagem, dataPagamento, nomeMes };

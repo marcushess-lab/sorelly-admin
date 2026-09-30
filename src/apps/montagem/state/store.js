@@ -1,6 +1,7 @@
 // Sorelly Admin · montagem e bipagem — state/store.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { CFG0 } from "@/apps/montagem/domain/config";
+import { novaVersaoRegras } from "@/apps/montagem/domain/consignado";
 import { MONTADORAS, SUPERVISORA, nomeDe } from "@/apps/montagem/domain/equipe";
 import { NOVAS0, RECUSAS0, VIRADA0, avalRepDemo } from "@/apps/montagem/domain/representantes";
 import { HISTORICO0, REGISTROS0, histDemo, novoDia } from "@/apps/montagem/domain/seed";
@@ -12,15 +13,23 @@ import { hoje, hora } from "@/apps/montagem/lib/format";
 var CHAVE = "sorelly_montagem_v9"; // v4: tipos de item, condicionais, kit novo e retirada pelo app
 function novo(){
   var d = novoDia();
+  var rv0 = novaVersaoRegras();
   return {v:4, cfg:JSON.parse(JSON.stringify(CFG0)), montadoras:JSON.parse(JSON.stringify(MONTADORAS)),
+    regrasConsignado:{versoes:[rv0], atualId:rv0.id}, acertosConsignado:[],
     listagens:d.listagens, kits:d.kits, registros:REGISTROS0.slice(), historico:HISTORICO0.slice(), histListagens:histDemo(), histV:2, novas:JSON.parse(JSON.stringify(NOVAS0)), retPend:[],
     avalRep:avalRepDemo(), recusas:RECUSAS0.slice(), virada:JSON.parse(JSON.stringify(VIRADA0)), bloqueioNovas:{Jessica:true},
+    perfisRev:{
+      "Andrielle Taborda":{profissao:"Nail Designer", enderecoTrabalho:"Studio Bella Nails · Rua Francisco Derosso, 2145 - Xaxim, Curitiba - PR"},
+      "Silvana Ramos":{profissao:"Cabeleireira", enderecoTrabalho:"Studio Concept Hair · Rua Chile, 1670 - Rebouças, Curitiba - PR"},
+      "Amanda Ribeiro":{profissao:"Gerente de Loja", enderecoTrabalho:"Boutique Maison · Avenida República Argentina, 2870 - Portão, Curitiba - PR"},
+      "Daniela Moreira":{profissao:"Desempregada", enderecoTrabalho:"Não se aplica"}
+    },
     contasPagar:JSON.parse(JSON.stringify(CONTAS_PAGAR_DEMO)), verFinanceiro:"total",
     faturamentoDiario:JSON.parse(JSON.stringify(FATURAMENTO_DIARIO_DEMO)), metaMensal:JSON.parse(JSON.stringify(META_MENSAL_DEMO)),
     revendedorasDiario:JSON.parse(JSON.stringify(REVENDEDORAS_DIARIO_DEMO)), vendidoPonta:JSON.parse(JSON.stringify(VENDIDO_PONTA_DEMO)),
     contasPagasDiario:JSON.parse(JSON.stringify(CONTAS_PAGAS_DIARIO_DEMO)),
     mesFechado:null, visao:"supervisao", bipadora:9, usuario:11, aba:"painel", celular:1, telaCel:"proximo",
-    abertas:{L1:true, L2:true, L3:false, L4:false}, kitAberto:null, extrato:null, filtroReg:"todas", aviso:null};
+    abertas:{L1:true, L2:true, L4:false}, kitAberto:null, extrato:null, filtroReg:"todas", aviso:null};
 }
 function inicial(){
   try { var j = localStorage.getItem(CHAVE); if(j){ var s = JSON.parse(j); if(s && s.v===4){ s.aviso=null;
@@ -39,6 +48,9 @@ function inicial(){
     if(!s.vendidoPonta) s.vendidoPonta = JSON.parse(JSON.stringify(VENDIDO_PONTA_DEMO));
     if(!s.metaMensal) s.metaMensal = JSON.parse(JSON.stringify(META_MENSAL_DEMO));
     if(!s.contasPagasDiario) s.contasPagasDiario = JSON.parse(JSON.stringify(CONTAS_PAGAS_DIARIO_DEMO));
+    if(!s.regrasConsignado){ var rv0b = novaVersaoRegras(); s.regrasConsignado = {versoes:[rv0b], atualId:rv0b.id}; }
+    if(!s.acertosConsignado) s.acertosConsignado = [];
+    if(!s.perfisRev) s.perfisRev = {};
     if(!s.usuario) s.usuario = SUPERVISORA.id;
     if(s.aba==="comissoes") s.aba = "equipe";
     s.visao = "supervisao";

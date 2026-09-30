@@ -1,10 +1,10 @@
 // Sorelly Admin · montagem e bipagem — domain/representantes.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 
-var REPS_AVAL = ["Dayanne","Lysie","Anne","Jessica","Priscila","Rosana"];
+var REPS_AVAL = ["Dayanne","Lysie","Marcus Hess","Jessica","Priscila","Rosana"];
 function avalRepDemo(){
   var revs = ["Ana Paula","Bianca","Cristiane","Daiane","Edna","Fabiana","Gislaine","Helena","Ingrid","Joana","Kelly","Luciane","Marta","Neide"];
-  var base = {Dayanne:[5,4,5], Lysie:[4,5,4], Anne:[5,5,5], Jessica:[3,4,3], Priscila:[4,4,5], Rosana:[3,3,4]}, out = [];
+  var base = {Dayanne:[5,4,5], Lysie:[4,5,4], "Marcus Hess":[5,5,5], Jessica:[3,4,3], Priscila:[4,4,5], Rosana:[3,3,4]}, out = [];
   REPS_AVAL.forEach(function(r, i){ var n = 8 + (i*3)%7, b = base[r];
     for(var j=0;j<n;j++){ var v = function(x, q){ return Math.max(1, Math.min(5, x + ((i+j+q)%5===0 ? -1 : (i+j+q)%7===0 ? 1 : 0))); };
       out.push({rep:r, rev:revs[(i*5+j)%revs.length], data:String(1+(j*3+i)%23).padStart(2,"0")+"/09", pont:v(b[0],0), expl:v(b[1],1), whats:v(b[2],2),
@@ -13,7 +13,7 @@ function avalRepDemo(){
 }
 var RECUSAS0 = [{rep:"Jessica", rev:"Gabriela Lemos", data:"05/09", motivo:"Recusou pelo app"},{rep:"Jessica", rev:"Sônia Prates", data:"16/09", motivo:"Disse que não tem horário"},
   {rep:"Rosana", rev:"Marli Teixeira", data:"11/09", motivo:"Recusou pelo app"}];
-var VIRADA0 = {Dayanne:{ultimo:30, volta:4}, Lysie:{ultimo:30, volta:2}, Anne:{ultimo:29, volta:5}, Jessica:{ultimo:30, volta:1}, Priscila:{ultimo:28, volta:3}, Rosana:{ultimo:29, volta:4}};
+var VIRADA0 = {Dayanne:{ultimo:30, volta:4}, Lysie:{ultimo:30, volta:2}, "Marcus Hess":{ultimo:29, volta:5}, Jessica:{ultimo:30, volta:1}, Priscila:{ultimo:28, volta:3}, Rosana:{ultimo:29, volta:4}};
 function diasParados(v){ return v ? (31 - v.ultimo) + (v.volta - 1) : 0; }
 function resumoRep(rep, s){
   var c = s.cfg, av = (s.avalRep||[]).filter(function(a){return a.rep===rep;});
@@ -26,11 +26,11 @@ function resumoRep(rep, s){
     bonus: pontos!==null && pontos>=c.bonusNotaMin, bloqueada: !!(s.bloqueioNovas||{})[rep]};
 }
 var NOVAS0 = [
-  {id:"N1", nome:"Aline Moura", cidade:"Curitiba", bairro:"Boqueirão", valor:7000, expositor:true, rep:null, status:"aguardando", cadastro:"23/09"},
-  {id:"N2", nome:"Beatriz Santana", cidade:"Curitiba", bairro:"Portão", valor:8000, expositor:false, rep:"Lysie", status:"direcionada", cadastro:"23/09"},
-  {id:"N3", nome:"Carla Nogueira", cidade:"Ponta Grossa", bairro:"Uvaranas", valor:7000, expositor:true, rep:"Anne", status:"direcionada", cadastro:"22/09"},
-  {id:"N4", nome:"Denise Albuquerque", cidade:"Curitiba", bairro:"Xaxim", valor:10000, expositor:false, rep:null, status:"aguardando", cadastro:"24/09"},
-  {id:"N5", nome:"Elaine Ferraz", cidade:"Curitiba", bairro:"Hauer", valor:7000, expositor:false, rep:"Jessica", status:"direcionada", cadastro:"21/09"},
-  {id:"N6", nome:"Flávia Rangel", cidade:"Curitiba", bairro:"Capão Raso", valor:8000, expositor:true, rep:null, status:"aguardando", cadastro:"24/09"}];
+  {id:"N1", nome:"Camila Ferreira", cidade:"Curitiba", bairro:"Água Verde", endereco:"Rua José Loureiro, 812 - Água Verde, Curitiba - PR",
+    fone:"(41) 99123-4567", valor:8000, expositor:false, profissao:"Manicure", trab:"Studio Camila Beauty", trabEnd:"Rua XV de Novembro, 500 - Centro, Curitiba - PR",
+    disp:"Manhãs, de segunda a sexta", rep:"Dayanne", status:"direcionada", cadastro:"29/09"},
+  {id:"N2", nome:"Patrícia Nunes", cidade:"Curitiba", bairro:"Batel", endereco:"Rua Brigadeiro Franco, 2200 - Batel, Curitiba - PR",
+    fone:"(41) 99876-5432", valor:9000, expositor:true, profissao:"Cabeleireira", trab:"Salão Nunes Hair", trabEnd:"Avenida Sete de Setembro, 3400 - Batel, Curitiba - PR",
+    disp:"Tardes, a partir das 14h", rep:"Dayanne", status:"direcionada", cadastro:"29/09"}];
 
 export { REPS_AVAL, avalRepDemo, RECUSAS0, VIRADA0, diasParados, resumoRep, NOVAS0 };

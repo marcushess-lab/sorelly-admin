@@ -1,12 +1,13 @@
 // Sorelly Admin · montagem e bipagem — state/reducer.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
+import { calcularAcerto, novaVersaoRegras, versaoDoKit, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { BIPADORAS, KITNOVO, SUPERVISORA, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
-import { dataPagamento, ehAtencao, nomeMes, resumoBipadora, resumoMontadora } from "@/apps/montagem/domain/regras";
+import { capacidadeListagem, dataPagamento, ehAtencao, kitsNaListagem, listagemCheia, nomeMes, resumoBipadora, resumoMontadora } from "@/apps/montagem/domain/regras";
 import { kit } from "@/apps/montagem/domain/seed";
 import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
-import { BK, N1, hora } from "@/apps/montagem/lib/format";
+import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
 
 function reducer(s, a){
@@ -195,16 +196,30 @@ function reducer(s, a){
       "Listagem reaberta e de volta ao Painel");
     case "ADD_KIT": {
       var l = s.listagens.find(function(x){return x.id===a.lid;}); if(!l || l.fechada) return s;
+      if(listagemCheia(s, a.lid)) return com(s, {}, "Listagem de "+l.horario+" j\u00e1 est\u00e1 com "+kitsNaListagem(s, a.lid)+"/"+capacidadeListagem(l)+" revendedoras: escolha outra listagem", "alerta");
       var nk = kit(a.lid, a.rev, a.bairro||"\u2014", 5000, a.prio, {sem:true});
       nk.id = "U"+agora; nk.vendas = a.vendas||[]; nk.ultimaHora = true; nk.atrasado = !!a.atrasado;
       nk.ordem = s.kits.filter(function(x){return x.lid===a.lid;}).length + 1;
       nk.tipoKit = a.tipoKit || "acerto_kit"; nk.fone = a.fone || ""; nk.porApp = !!a.porApp;
       nk.cond = {nums:a.conds||[], pegas:false, chkM:{}, chkB:{}, faltas:{}, impressas:{}, novas:[]};
       nk.horaAtend = a.hora || null;
+      // Carimba a vers\u00e3o de regras de comiss\u00e3o/brinde vigente agora: o acerto deste kit sempre vai usar esta vers\u00e3o,
+      // mesmo que as regras mudem antes do acerto acontecer (a mudan\u00e7a s\u00f3 vale a partir do pr\u00f3ximo kit).
+      var vv = versaoVigente(s); nk.regrasVersaoId = vv ? vv.id : null; nk.remarcacoes = 0;
       // revendedora que saiu (ou s\u00f3 condicional): n\u00e3o tem kit, s\u00f3 a condicional vai para a representante retirar
       if(SEM_KIT[nk.tipoKit]){ nk.status = "condicional"; nk.valor = null; nk.prio = false; }
       var txtAdd = SEM_KIT[nk.tipoKit] ? a.rev+" entrou s\u00f3 para retirar a condicional" : nk.tipoKit==="reposicao" ? "Reposi\u00e7\u00e3o de "+a.rev+" inclu\u00edda: defina o valor (at\u00e9 o m\u00e1ximo liberado)" : "Kit de \u00faltima hora inclu\u00eddo, defina o valor para ele entrar na fila";
       return com(s, {kits: s.kits.concat([nk])}, txtAdd+(nk.atrasado?" \u00b7 atrasado":""));
+    }
+    case "SALVAR_PERFIL_REV": {
+      var perfis = Object.assign({}, s.perfisRev);
+      perfis[a.chave] = Object.assign({}, perfis[a.chave], a.patch);
+      return com(s, {perfisRev:perfis}, "Dados de "+a.chave+" atualizados");
+    }
+    case "CRIAR_LISTAGEM": {
+      var novaL = {id:"L"+agora, rep:a.rep, destino:a.destino||"Curitiba", viagem:!!a.viagem, horario:a.horario||"10:00",
+        data:a.data||isoDia(new Date(agora)), fechada:false, retiradas:[]};
+      return com(s, {listagens: s.listagens.concat([novaL])}, "Listagem de "+a.horario+" criada para "+a.rep);
     }
     case "FECHAR_MES": {
       if(s.mesFechado) return s;
@@ -312,6 +327,7 @@ function reducer(s, a){
     case "NOVA_INCLUIR": {
       var nv = (s.novas||[]).find(function(n){return n.id===a.id;}), ln = s.listagens.find(function(x){return x.id===a.lid;});
       if(!nv || !ln || ln.fechada) return s;
+      if(listagemCheia(s, a.lid)) return com(s, {}, "Listagem de "+ln.horario+" já está com "+kitsNaListagem(s, a.lid)+"/"+capacidadeListagem(ln)+" revendedoras: escolha outra listagem", "alerta");
       // dentro do prazo não precisa de nada; fora do prazo: Michele só com autorização da diretoria, representante entra como atrasado
       if(a.foraPrazo && a.quem==="kitnovo" && !a.autorizador) return com(s, {}, "Fora do prazo: precisa da autorização do Marcus ou do Nickolas", "alerta");
       var nk = kit(a.lid, nv.nome, nv.bairro, nv.valor, 0, {nv:0});
@@ -324,6 +340,40 @@ function reducer(s, a){
     }
     // Avaliação da representante no app dela: nota do kit e peças faltando (desconta da bipadora)
     case "AVALIAR": return com(s, {kits: mapKit(s, a.id, function(){ return {aval:{nota:a.nota, faltas:a.faltas}}; })}, "Avaliação enviada");
+    // Representante marca uma remarcação deste kit (antes do acerto): conta a "vez" e se avisou com 48h+ de antecedência.
+    case "KIT_REMARCAR": {
+      k = kitDe(s, a.id); if(!k) return s;
+      return com(s, {kits: mapKit(s, a.id, function(x){ return {remarcacoes:(x.remarcacoes||0)+1, ultimaRemarcacaoComAviso:!!a.comAviso}; })},
+        "Remarcação registrada para "+k.rev+(a.comAviso ? " (avisou com antecedência)" : " (sem aviso / em cima da hora)"), "atencao");
+    }
+    // Fecha o acerto de um kit de revenda normal: calcula comissão/brinde pela regra carimbada no kit e grava no consolidado.
+    case "ACERTO_REGISTRAR": {
+      k = kitDe(s, a.id); if(!k) return s;
+      var versaoK = versaoDoKit(s, k); if(!versaoK) return s;
+      var res = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:a.devolvida||0, garantia:a.garantia||0, vez:k.remarcacoes||0,
+        comAviso:k.ultimaRemarcacaoComAviso!==false, pagouIntegral:a.pagouIntegral}, versaoK);
+      var registro = Object.assign({id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
+        tipo:"acerto", data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:versaoK.id}, res);
+      return com(s, {kits: mapKit(s, a.id, function(){ return {acerto:res, status:"acertado"}; }),
+        acertosConsignado:[registro].concat(s.acertosConsignado||[])},
+        "Acerto de "+k.rev+" registrado: "+BK(res.valorAcerto)+" (comissão "+BK(res.comissao)+")");
+    }
+    // Reposição ou expositor: nunca passa pela tabela de faixas, comissão fixa (kit) ou manual (reposição especial).
+    case "REPOSICAO_ENTREGAR": {
+      k = kitDe(s, a.id); if(!k) return s;
+      var comissaoFixa = a.especial ? (a.comissaoManual||0) : (a.comExpositor ? 35 : 20);
+      var registroRep = {id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
+        tipo: a.especial ? "reposicao_especial" : "reposicao", data:new Date(agora).toISOString().slice(0,10), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0};
+      return com(s, {kits: mapKit(s, a.id, function(){ return {reposicaoEntregue:true, comissaoFixa:comissaoFixa, status:"acertado"}; })},
+        "Reposição de "+k.rev+" entregue"+(comissaoFixa ? " · comissão "+BK(comissaoFixa) : ""));
+    }
+    // Nova versão das regras de comissão/brinde/remarcação: só vale a partir do próximo kit criado (kits em aberto mantêm a regra antiga carimbada).
+    case "REGRAS_CONSIGNADO_ATUALIZAR": {
+      var atualAntes = versaoVigente(s);
+      var novaV = novaVersaoRegras(a.campos, atualAntes ? atualAntes.id : null);
+      return com(s, {regrasConsignado:{versoes:(s.regrasConsignado.versoes||[]).concat([novaV]), atualId:novaV.id}},
+        "Regras do consignado atualizadas: vale a partir do próximo kit de cada revendedora");
+    }
     case "PECAS": {
       var cp = JSON.parse(JSON.stringify(s.cfg)); cp.pecasKit[a.i].q[a.j] = a.valor; return com(s, {cfg:cp});
     }
