@@ -56,3 +56,10 @@ html.dark.app-montagem { --muted-foreground: oklch(0.86 0 0); }
   .app-claro [class*="from-rose-500"], .app-claro [class*="from-rose-500"] *, .app-claro .txt-branco, .app-claro .txt-branco * { color:#fff !important; }
   .app-claro [class*="from-sky-500"], .app-claro [class*="from-amber-500"], .app-claro [class*="from-rose-500"], .app-claro [class*="from-emerald-500"] { --tw-ring-color:transparent; box-shadow:0 2px 6px rgba(17,24,39,.12); }
   .app-claro [class*="shadow-amber-500"] { box-shadow:0 4px 12px rgba(201,161,59,.35) !important; }
+
+/* Registro de ação (components/aviso.js): sobe e aparece */
+@keyframes toast-sobe { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.toast-sobe { animation: toast-sobe .22s ease-out; }
+
+/* App da representante, tela Comissões: textos brancos sobre cartões escuros/coloridos (o tema claro do app muda só a classe text-white) */
+.cr-b { color:#fff; } .cr-b90 { color:rgba(255,255,255,.9); } .cr-b80 { color:rgba(255,255,255,.8); } .cr-b70 { color:rgba(255,255,255,.7); } .cr-b60 { color:rgba(255,255,255,.6); }

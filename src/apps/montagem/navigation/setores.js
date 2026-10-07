@@ -11,15 +11,19 @@ var SETORES = [
   {id:"visao", nome:"Visão geral", ic:"grid4", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
   {id:"chamados", nome:"Chamados", ic:"chamado", cor:"#EF4444", direto:B("Chamados")},
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", areas:[
-    G("Financeiro Sorelly", [
+    G("CNPJs", [["CNPJs", [I("cnpjs","CNPJs",["Cadastro das 5 empresas da Sorelly (34, 46, 59, 67 e H&O Apps)"]),
+      I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"])]]]),
+    G("Faturamento e Contas a Pagar", [
       ["Faturamento vs contas a pagar", [I("previsaofat","Previsão de faturamento",["Faturamento vs Contas a Pagar → Painel (refeita: lançamento diário só do dia anterior, ligada à Contas a pagar)"]),
         I("contaspagar","Contas a pagar",["Faturamento vs Contas a Pagar → Contas a pagar (refeita: lançamento manual de Pago e A pagar por mês, visão Total e por CNPJ)"]),
-        E("Histórico de contas",["Faturamento vs Contas a Pagar → Histórico de contas"]), E("Saldos bancários",["Faturamento vs Contas a Pagar → Saldos bancários"])]],
-      ["Saldo das contas", [E("Visão geral dos saldos",["Saldo das Contas → Visão geral"]), E("Lançamento diário dos saldos",["Saldo das Contas → Lançamento diário"]),
-        E("Histórico dos saldos",["Saldo das Contas → Histórico"]), E("Relatório dos saldos",["Saldo das Contas → Relatório"]), E("Gráficos",["Saldo das Contas → Gráficos"]),
-        E("Chaves PIX e configurador",["Saldo das Contas → Chaves PIX e Configurador","Faturamento vs Contas a Pagar → Configurador","Fiscal → Configuração"])]],
+        E("Histórico de contas",["Faturamento vs Contas a Pagar → Histórico de contas"])]]]),
+    G("Saldos Bancários", [
+      ["Saldos Bancários", [E("Visão geral",["Saldo das Contas → Visão geral","Saldo das Contas → Lançamento diário","Saldo das Contas → Histórico","Saldo das Contas → Gráficos","Saldo das Contas → Relatório"]),
+        E("Chaves PIX",["Saldo das Contas → Chaves PIX e Configurador"])]]]),
+    G("Fiscal", [
       ["Fiscal", [E("Visão geral fiscal",["Fiscal → Visão geral"]), E("Entradas",["Fiscal → Entradas"]), E("Saídas",["Fiscal → Saídas"]),
-        E("Contas a pagar fiscal",["Fiscal → Contas a pagar"]), E("Dashboard anual",["Fiscal → Dashboard anual"])]],
+        E("Contas a pagar fiscal",["Fiscal → Contas a pagar"]), E("Dashboard anual",["Fiscal → Dashboard anual"])]]]),
+    G("Recebimentos e Leilão", [
       ["Recebimentos", [B("Link de pagamento"), B("Maquininhas")]],
       ["Leilão", [B("Leilão")]]]),
     G("Financeiro familiar", [["Financeiro familiar", [E("Home",["Financeiro Familiar → Home"]), E("Alertas",["Financeiro Familiar → Alertas"]), E("Contas a pagar da família",["Financeiro Familiar → Contas a Pagar"]),
@@ -48,12 +52,14 @@ var SETORES = [
       E("Avaliação dos kits", ["Avaliações → Kits"]),
       Object.assign(T("avalrep","Avaliação das representantes"), {adm:true, origem:["Avaliações → Representantes"]})]}]},
   {id:"kits", nome:"Kits", ic:"caixa", cor:"#22C55E", areas:[
+    {nome:"Atendimento interno", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]},
     {nome:"Listagens & Kits", telas:[T("painel"), T("condicionais"), I("calc","Calculadora de kits",["Calculadora de Kits do admin"]),
       T("vendas","Análise de vendas"), T("consolidado"), T("regras"),
       E("Metas", ["Sistema de metas do admin (vendas dos meses anteriores + regras)"]),
       T("equipe"), T("registros"), T("relatorios")]},
     {nome:"Representantes", telas:[
-      B("Consolidado"), B("Comissões"), B("Inadimplência"), B("Regras"), T("celrep","App do representante"), B("Configurações")]},
+      T("celrep","App da Representante"), T("consrep","Consolidado atendimentos de representantes"), T("placar","Placar das representantes"), T("comissoes","Comissões"),
+      T("inadimp","Inadimplência"), T("comprasrep","Compras de joias"), T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos"), T("configrep","Configurações")]},
     {nome:"Produção", telas:[B("Produção Sorelly"), B("Produção Serenity")]}]},
   {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", areas:[
     {nome:"Estoque de peças", telas:[E("Estoque Sorelly", ["Estoque Sorelly → Resumo geral e Preenchimento (estoque geral de peças)"]), B("Cadastro de peças")]},
@@ -74,7 +80,7 @@ var SETORES = [
   {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", areas:[
     {nome:"Marketing", telas:[B("Campanhas"), B("Tráfego pago")]}]},
   {id:"tec", nome:"Tecnologia", ic:"celular", cor:"#0EA5E9", areas:[
-    {nome:"Sistema", telas:[B("App Sorelly"), Object.assign(T("config","Configurador geral"), {origem:["Um configurador só no lugar dos configuradores do financeiro, do estoque, das avaliações, dos acertos, do consignado e dos kits"]}), B("Projetos (dev)")]}]}
+    {nome:"Sistema", telas:[B("App Sorelly"), Object.assign(T("config","Configurador geral"), {origem:["Um configurador só no lugar dos configuradores do financeiro, do estoque, das avaliações, dos acertos, do consignado e dos kits"]}), T("avisos","Avisos"), B("Projetos (dev)")]}]}
 ];
 var APPS_TOPO = [["celrep","App representante","representante","#8B5CF6"],["celrev","App revendedora","revendedora","#EC4899"],["celular","App montagem","montadora","#F59E0B"],["celbip","App bipagem","bipagem","#0EA5E9"],["celcond","App condicionais","scan","#D97706"]];
 var SETORES_BAIXO = [{id:"equipes", nome:"Equipes", ic:"equipe", cor:"#A855F7", direto:B("Equipes")}, {id:"metricas", nome:"Métricas", ic:"grafico", cor:"#94A3B8", direto:T("relatorios","Métricas")}];

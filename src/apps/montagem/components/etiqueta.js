@@ -2,6 +2,7 @@
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { CondChips, CondLista } from "@/apps/montagem/components/condicionais";
 import { condOk } from "@/apps/montagem/domain/condicionais";
+import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { ehAtencao, listagemDe, pecasPara } from "@/apps/montagem/domain/regras";
 import { TIPO_KIT } from "@/apps/montagem/domain/status";
 import { media3 } from "@/apps/montagem/domain/vendas";
@@ -32,6 +33,7 @@ function Etiqueta(p){
       k.status==="ajuste" && e("div",{className:"rounded-xl bg-rose-500/15 px-3 py-2 text-[12px] font-semibold text-rose-300"},"Voltou para ajuste: "+k.motivo),
       e("div",null,
         e("p",{className:"text-xl font-bold leading-tight"}, k.rev),
+        modalidadeDe(s, k.rev)==="prata" && e("span",{className:"mt-1 inline-block rounded-full bg-slate-300 px-2.5 py-0.5 text-[11px] font-black tracking-wider text-slate-900"},"KIT 100% PRATA"),
         e("p",{className:"text-[13px] text-[#8E8E93]"}, k.bairro)),
       // A montadora não vê valores (vendas, valor do kit): vê o tipo do item e o que enviar
       e("div",{className:"flex items-center justify-between gap-3 rounded-2xl bg-black/50 p-3"},

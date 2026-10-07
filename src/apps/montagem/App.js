@@ -11,6 +11,8 @@ import "@/apps/montagem/styles/montagem.css";
 import { abaDoCaminho, caminhoDaAba } from "@/apps/montagem/router/slugs";
 import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
+import { AvisoPagamentos } from "@/apps/montagem/components/aviso-pagamentos";
+import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
 import { SeletorAcesso } from "@/apps/montagem/components/seletor-acesso";
 import { ABAS, COR_ABA, GRUPOS_MENU } from "@/apps/montagem/navigation/abas";
 import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
@@ -28,6 +30,9 @@ function App(){
   var loc = useLocation();
   var naURL = abaDoCaminho(loc.pathname), abaURL = naURL.aba, breveURL = naURL.breve;
   var mn = useState(false), menu = mn[0], setMenu = mn[1];
+  // menu lateral recolhido (quem passa o dia numa tela só ganha espaço); lembra a escolha neste navegador
+  var rcs = useState(function(){ try{ return localStorage.getItem("sorelly_menu_recolhido")==="1"; }catch(x){ return false; } }), recolhido = rcs[0], setRecolhido = rcs[1];
+  var alternarMenu = function(v){ setRecolhido(v); if(v) setColArea(null); try{ localStorage.setItem("sorelly_menu_recolhido", v ? "1" : "0"); }catch(x){} };
   var ga = useState({}), gruposAb = ga[0], setGruposAb = ga[1];
   var so = useState(function(){ var o = ondeEsta(abaURL); return o ? o.setor.id : "kits"; }), setorAb = so[0], setSetorAb = so[1];
   var ca = useState(null), colArea = ca[0], setColArea = ca[1];
@@ -81,10 +86,11 @@ function App(){
     e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:cor, color:"#fff", boxShadow:"0 2px 8px "+cor+"55"} : {background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}},
       e(Icon,{n:ic, s:15, peso: on ? "fill" : "duotone"})), e("span",{className:"min-w-0 truncate whitespace-nowrap"}, lb)); };
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},
-    e("aside",{className:"fixed inset-y-0 left-0 z-40 w-[18.5rem] flex-col border-r border-sidebar-border bg-sidebar "+(menu?"flex":"hidden md:flex")},
-      e("div",{className:"flex h-14 items-center gap-2 border-b border-sidebar-border px-4"},
-        e("span",{className:"grid size-7 place-items-center rounded-md bg-primary text-primary-foreground"}, e(Icon,{n:"gem", s:15})),
-        e("span",{className:"font-heading text-sm font-semibold"},"Sorelly Admin")),
+    e("aside",{className:"fixed inset-y-0 left-0 z-40 w-[18.5rem] flex-col border-r border-sidebar-border bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex")},
+      // logo da Sorelly (símbolo + nome, sem o "joias"), grande e centralizada no canto de cima à esquerda
+      e("div",{className:"relative flex h-28 items-center justify-center border-b border-sidebar-border px-4"},
+        e("img",{src:(import.meta.env.BASE_URL||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),
+        e("button",{title:"Recolher o menu", "aria-label":"Recolher o menu", onClick:function(){ alternarMenu(true); setMenu(false); }, className:"absolute right-2 top-2 hidden size-8 place-items-center rounded-md hover:bg-white/10 md:grid"}, e(Icon,{n:"fechar", s:15}))),
       !permitidas && e("div",{className:"flex items-center gap-1.5 border-b border-sidebar-border px-3 py-2.5 text-[12px] font-semibold"},
         [["tudo","Completo","Completo: HTML, admin e o que vamos criar"],["admin","Admin + HTML","O que já existe: no admin e aqui no HTML"],["sistema","HTML","Só o que já está pronto aqui no HTML"]].map(function(x){
           return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
@@ -125,9 +131,9 @@ function App(){
           className:"flex h-10 w-full items-center gap-2.5 rounded-lg text-left text-[13.5px] whitespace-nowrap "+(x.dentro ? "pl-6 pr-2 " : "px-2 ")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
           e(MarcaTela,{t:t}),
           e("span",{className:"min-w-0 flex-1 truncate"+(t.breve ? " text-foreground/85" : "")}, t.nome)); }))),
-    e("div",{className:"transition-[margin] duration-200 md:ml-[18.5rem]", style: colAr && window.innerWidth>=768 ? {marginLeft:296+colW} : undefined},
+    e("div",{className:"transition-[margin] duration-200 "+(recolhido ? "md:ml-0" : "md:ml-[18.5rem]"), style: colAr && !recolhido && window.innerWidth>=768 ? {marginLeft:296+colW} : undefined},
       e("header",{className:"sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6"},
-        e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 md:hidden", "aria-label":"Menu", onClick:function(){setMenu(!menu);}}, e(Icon,{n:"menu"})),
+        e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
         e("span",{className:"min-w-0 flex-1 truncate text-sm text-muted-foreground whitespace-nowrap"}, onde ? onde.setor.nome : "Sorelly", onde && e(React.Fragment,null, e("span",{className:"mx-1.5"},"/"), onde.area.nome), e("span",{className:"mx-1.5"},"/"), e("span",{className:"text-foreground"}, titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
         e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !permitidas || permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
@@ -138,7 +144,9 @@ function App(){
         e(SeletorAcesso),
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
       e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
-    e(Aviso));
+    e(Aviso),
+    e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }}),
+    e(AvisoPagamentos,{abrir:function(){ navigate(caminhoDaAba("visaogeral")); setColArea(null); }, abrirAtendimento:function(){ navigate(caminhoDaAba("intcalc")); setColArea(null); }}));
 }
 
 export default App;

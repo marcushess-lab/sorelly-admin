@@ -31,7 +31,7 @@ function ListagemHistorico(p){
         e("span",{className:MONO+" text-sm font-semibold"}, BK(h.total)),
         e("span",{className:"text-[13px] font-medium opacity-80"},"concluída "+h.concluida),
         e("span",{className:"text-[13px] font-semibold", title:"Nota média dada pela representante"}, notaMedia ? "★ "+N1(notaMedia) : ""),
-        e("span",null),
+        e("span",null, h.sozinha && chip("Retirou sozinha","user","bg-black/20 text-[#1B1409]","A representante veio na empresa e retirou os kits sozinha")),
         e("span",{className:"justify-self-end"}, h.atrasados>0 && chip(h.atrasados+(h.atrasados>1?" atrasados":" atrasado"),"clock","bg-[#9A4A00] text-white","Pedidos fora do prazo")),
         e("span",{className:"justify-self-end"}, h.divs>0 && chip(h.divs+(h.divs>1?" divergências":" divergência"),null,"bg-[#7A1F1F] text-white")),
         e("span",{className:"justify-self-end"}, h.hoje && h.lid && e("button",{onClick:function(ev){ ev.stopPropagation(); p.reabrir(h.lid); },

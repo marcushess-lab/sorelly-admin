@@ -1,6 +1,7 @@
 // Sorelly Admin · montagem e bipagem — pages/ContasPagar.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+import { COLUNAS_CONTAS } from "@/apps/montagem/domain/cnpjs";
 import { MESES_LONGO } from "@/apps/montagem/domain/financeiro";
 import { BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -49,7 +50,21 @@ function AbaContasPagar(){
       e("button",{onClick:function(){d({type:"VER_FIN", v:"total"});}, className:"rounded-md px-3 py-1.5 "+(verFin==="total"?"bg-primary text-primary-foreground":"hover:bg-card")},"Total (consolidado)"),
       e("button",{onClick:function(){d({type:"VER_FIN", v:"cnpj"});}, className:"rounded-md px-3 py-1.5 "+(verFin==="cnpj"?"bg-primary text-primary-foreground":"hover:bg-card")},"Por CNPJ")),
     verFin==="cnpj"
-      ? e(Vazio,{txt:"Aguardando a lista de CNPJs da Sorelly para separar por empresa. Quando chegar, esta visão soma para bater com o Total."})
+      ? e(BlocoBarra,{t:"A pagar por CNPJ em "+ano, sub:"digite o que falta pagar de cada mês em cada empresa; contas sem empresa vão em \"Contas sem CNPJ\". A tela Limite de faturamento usa estes valores."},
+        e("div",{className:"flex flex-col gap-2 overflow-x-auto p-3"},
+          e("div",{className:"grid min-w-[56rem] grid-cols-[8rem_repeat(6,1fr)_7rem] gap-2 px-1 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"},
+            e("span",{className:"text-left"},"Mês"), COLUNAS_CONTAS.map(function(c){ return e("span",{key:c[0]}, c[1]); }), e("span",null,"Total do mês")),
+          MESES_LONGO.map(function(nome,i){
+            var cc = (s.contasCnpj && s.contasCnpj[anoStr]) || {};
+            var totalMes = COLUNAS_CONTAS.reduce(function(t,c){ return t+((cc[c[0]]||{})[i]||0); },0);
+            return e("div",{key:i, className:"grid min-w-[56rem] grid-cols-[8rem_repeat(6,1fr)_7rem] items-center gap-2 rounded-xl border px-2 py-1.5 "+(i===mesAtualIdx?"border-warning/60 bg-warning/5":"border-border bg-card")},
+              e("span",{className:"text-[13.5px] font-semibold"}, nome),
+              COLUNAS_CONTAS.map(function(c){ return e(MoneyInput,{key:c[0], value:(cc[c[0]]||{})[i]||0, sm:true, className:"w-full", label:nome+" "+c[1],
+                onChange:function(x){ d({type:"CC_SET", ano:anoStr, id:c[0], mes:i, valor:x}); }}); }),
+              e("b",{className:MONO+" text-center text-[13.5px] "+(totalMes>0?"text-primary":"text-muted-foreground")}, BK(totalMes)));
+          }),
+          e("div",{className:"flex justify-center pt-1"},
+            e(Btn,{v:"ghost", sm:true, ic:"chevron", onClick:function(){ d({type:"ABA", aba:"limitefat"}); }}, "Ver o limite de faturamento de cada CNPJ"))))
       : e(React.Fragment,null,
         e("div",{className:"grid grid-cols-2 gap-2 md:grid-cols-4"},
           e(KPI,{compacto:true, l:"Valor médio pago no ano", v:BK(mesesComPago ? totPago/mesesComPago : 0), sub:mesesComPago+" meses com pagamento"}),

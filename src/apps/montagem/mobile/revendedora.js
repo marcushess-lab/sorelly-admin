@@ -1,10 +1,11 @@
 // Sorelly Admin · montagem e bipagem — mobile/revendedora.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { condNovas } from "@/apps/montagem/domain/condicionais";
+import { modalidadeDe, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { listagemDe, pecasPara } from "@/apps/montagem/domain/regras";
 import { TIPO_KIT } from "@/apps/montagem/domain/status";
-import { BK } from "@/apps/montagem/lib/format";
+import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { OURO_APP } from "@/apps/montagem/mobile/bipagem";
 import { IPhone15 } from "@/apps/montagem/mobile/iphone";
 import { Avatar } from "@/apps/montagem/mobile/theme";
@@ -35,6 +36,26 @@ function AppRevendedora(p){
       className:"text-2xl leading-none "+(i<=f[campo]?"text-amber-300":"text-white/20")}, "★"); }))); };
   var up = function(o){ set(Object.assign({}, f, o)); };
   var l = listagemDe(s, k), pecas = k.valor ? pecasPara(k.valor, s.cfg) : null, cr = k.confRev;
+  // Modalidade do kit (Padrão | 100% Prata): ela mesma pode trocar, mas com no mínimo "trocaModalidadeDias" (10) de antecedência da data do acerto.
+  var modAtual = modalidadeDe(s, k.rev), perfilRev = s.perfisRev[k.rev] || {}, vigRev = versaoVigente(s);
+  var minDias = vigRev && vigRev.prata ? vigRev.prata.gerais.trocaModalidadeDias : 10;
+  var diasAteAcerto = perfilRev.dataAcerto ? Math.round((new Date(perfilRev.dataAcerto+"T12:00:00") - new Date(isoDia(new Date())+"T12:00:00")) / 86400000) : null;
+  var podeTrocar = diasAteAcerto!==null && diasAteAcerto>=minDias;
+  var blocoModalidade = e("div",{className:"mb-3 flex flex-col gap-2 rounded-2xl bg-[#1C1C1E] p-3"},
+    e("div",{className:"flex items-center justify-between gap-2"},
+      e("p",{className:"text-[13px] font-semibold"},"Modalidade do meu kit"),
+      modAtual==="prata" && e("span",{className:"rounded-full bg-slate-300 px-2 py-0.5 text-[10px] font-black tracking-wider text-slate-900"},"100% PRATA")),
+    e("label",{className:"flex items-center justify-between gap-2 text-[12px] text-[#8E8E93]"},"Data do meu acerto",
+      e("input",{type:"date", value:perfilRev.dataAcerto||"", onChange:function(ev){ d({type:"SALVAR_PERFIL_REV", chave:k.rev, patch:{dataAcerto:ev.target.value}}); },
+        className:"h-9 rounded-lg bg-black/50 px-2 text-[13px] text-white outline-none ring-1 ring-white/10 [color-scheme:dark]"})),
+    e("div",{className:"flex gap-2"}, [["padrao","Kit Padrão"],["prata","Kit 100% Prata"]].map(function(o){ var on = modAtual===o[0];
+      return e("button",{key:o[0], disabled:!on && !podeTrocar, "aria-pressed":on,
+        onClick:function(){ if(!on && podeTrocar) d({type:"SET_MODALIDADE", chave:k.rev, modalidade:o[0], por:k.rev, origem:"revendedora"}); },
+        className:"h-10 flex-1 rounded-xl text-[13px] font-semibold disabled:opacity-40 "+(on ? "bg-amber-300 text-[#1B1409]" : "bg-white/10 text-white/80")}, (on?"✓ ":"")+o[1]); })),
+    e("p",{className:"text-[11.5px] leading-snug "+(podeTrocar || diasAteAcerto===null ? "text-[#8E8E93]" : "text-amber-300")},
+      diasAteAcerto===null ? "Informe a data do seu acerto. Para trocar de modalidade é preciso avisar com pelo menos "+minDias+" dias de antecedência."
+      : podeTrocar ? "Faltam "+diasAteAcerto+" dias para o seu acerto: você pode trocar de modalidade."
+      : "Faltam "+diasAteAcerto+" dias para o acerto. Para trocar de modalidade é preciso avisar com pelo menos "+minDias+" dias de antecedência."));
   var opt = function(on, txt, onClick, cor){ return e("button",{onClick:onClick, className:"h-10 flex-1 rounded-xl text-[13px] font-semibold "+(on ? cor : "bg-white/10 text-white/80")}, txt); };
   return e(IPhone15,null,
     e("div",{className:"mb-3 flex items-center gap-3"},
@@ -44,6 +65,7 @@ function AppRevendedora(p){
       e("p",{className:"text-[12px] font-semibold opacity-80"}, "Seu kit chegou · representante "+l.rep),
       e("p",{className:"text-2xl font-bold"}, k.valor ? BK(k.valor) : "Condicional"),
       e("p",{className:"text-[12px]"}, (TIPO_KIT[k.tipoKit]||TIPO_KIT.acerto_kit)[0]+(condNovas(k).length ? " · condicional "+condNovas(k).join(", ") : ""))),
+    blocoModalidade,
     pecas && e("div",{className:"mb-3 rounded-2xl bg-[#1C1C1E] p-3"},
       e("p",{className:"mb-1.5 text-[12px] font-semibold text-[#8E8E93]"},"O que veio no kit"),
       e("div",{className:"flex flex-wrap gap-1.5"}, pecas.itens.map(function(x){ return e("span",{key:x.nome, className:"rounded-lg bg-black/40 px-2.5 py-1 text-[13px]"}, e("b",{className:MONO+" text-amber-200"}, x.q), " "+x.nome.toLowerCase()); }))),

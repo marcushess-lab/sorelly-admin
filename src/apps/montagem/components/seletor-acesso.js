@@ -1,6 +1,6 @@
 // Sorelly Admin · montagem e bipagem — components/seletor-acesso.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
-import { BIPADORAS, DIRETORIA, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA } from "@/apps/montagem/domain/equipe";
+import { AGENDAMENTO, BIPADORAS, DIRETORIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA } from "@/apps/montagem/domain/equipe";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e } from "@/shared/react";
@@ -15,6 +15,7 @@ function SeletorAcesso(){
       e("optgroup",{label:"Diretoria"}, DIRETORIA.map(function(x){return e("option",{key:x.id, value:x.id}, x.nome);})),
       e("optgroup",{label:"Kit novo"}, e("option",{value:KITNOVO.id}, KITNOVO.nome)),
       e("optgroup",{label:"Listagens e condicionais"}, e("option",{value:LISTAGENS_RESP.id}, LISTAGENS_RESP.nome)),
+      e("optgroup",{label:"Agendamento e financeiro"}, AGENDAMENTO.concat(FINANCEIRO).map(function(x){return e("option",{key:x.id, value:x.id}, x.nome);})),
       e("optgroup",{label:"Atendimento e bipagem"}, BIPADORAS.map(function(b){return e("option",{key:b.id, value:b.id}, b.nome);})),
       e("optgroup",{label:"Montagem de kits"}, MONTADORAS.map(function(m){return e("option",{key:m.id, value:m.id}, m.nome);}))));
 }

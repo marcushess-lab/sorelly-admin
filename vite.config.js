@@ -1,10 +1,18 @@
 import { defineConfig } from "vite";
+import { viteSingleFile } from "vite-plugin-singlefile";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
-export default defineConfig({
+// Modo "artefato": gera UM arquivo HTML só (tudo dentro), para publicar como Artifact. Roteamento em memória (ver main.js).
+export default defineConfig(({ mode }) => mode === "artefato" ? {
+  plugins: [react(), tailwindcss(), viteSingleFile()],
+  base: "./",
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+  build: { target: "es2020", outDir: "dist-artefato", assetsInlineLimit: 100000000, cssCodeSplit: false },
+} : {
   plugins: [react(), tailwindcss()],
+  server: { port: Number(process.env.PORT) || 5173 },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

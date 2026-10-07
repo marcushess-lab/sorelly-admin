@@ -10,7 +10,8 @@ import { TD, TH, TR } from "@/apps/montagem/ui/table";
 import { e } from "@/shared/react";
 
 var BARRAS = {ouro:"bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[#1B1409]", azul:"bg-linear-to-r from-[#1E4E8C] via-[#3B82F6] to-[#BFDBFE] text-white",
-  roxo:"bg-linear-to-r from-[#5B2A86] via-[#8B5CF6] to-[#DDD6FE] text-white"};
+  roxo:"bg-linear-to-r from-[#5B2A86] via-[#8B5CF6] to-[#DDD6FE] text-white",
+  prata:"bg-linear-to-r from-[#64748B] via-[#CBD5E1] to-[#F1F5F9] text-[#1B1409]"};
 function BlocoBarra(p){
   return e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
     e("div",{className:"flex flex-col items-center px-4 py-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+BARRAS[p.cor||"ouro"]},

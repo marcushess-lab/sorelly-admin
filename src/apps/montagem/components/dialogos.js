@@ -5,6 +5,7 @@ import { capacidadeListagem, kitsNaListagem, listagemCheia } from "@/apps/montag
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
+import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO, MoneyInput } from "@/apps/montagem/ui/input";
 import { Modal } from "@/apps/montagem/ui/modal";
 import { e, useEffect, useRef, useState } from "@/shared/react";
@@ -57,16 +58,23 @@ function DlgRetirada(p){
   var cd = useState(""), cod = cd[0], setCod = cd[1];
   var as = useState(null), ass = as[0], setAss = as[1];
   var ch = useState(0), chave = ch[0], setChave = ch[1];
-  useEffect(function(){ setSel(sel0); setCod(""); setAss(null); setChave(chave+1); }, [p.lid]);
+  var so = useState(false), sozinha = so[0], setSozinha = so[1];   // veio na empresa e retirou sozinha: leva todos os kits prontos da listagem
+  useEffect(function(){ setSel(sel0); setCod(""); setAss(null); setChave(chave+1); setSozinha(false); }, [p.lid]);
   var ids = prontos.filter(function(k){return sel[k.id];}).map(function(k){return k.id;});
   var total = prontos.filter(function(k){return sel[k.id];}).reduce(function(t,k){return t+k.valor;},0);
   var codOk = l && cod===codigoRetirada(l);
   var marcar = function(id){ var o = Object.assign({}, sel); o[id] = !o[id]; setSel(o); };
   var todos = ids.length===prontos.length;
+  var alternaSozinha = function(){ var v = !sozinha; setSozinha(v); var o = {}; if(v) prontos.forEach(function(k){o[k.id]=true;}); setSel(v ? o : sel0); };
   return e(Modal,{open:!!p.lid, titulo:"Fazer retirada", sub: l ? l.rep+" \u00b7 "+prontos.length+(prontos.length===1?" kit bipado dispon\u00edvel":" kits bipados dispon\u00edveis")+(outros?" \u00b7 "+outros+" ainda em produ\u00e7\u00e3o":"") : "",
       confirmar: ids.length ? "Confirmar retirada de "+ids.length+(ids.length===1?" kit":" kits") : "Marque os kits", icone:"check",
-      desabilitado: !ids.length || !codOk || !ass, onClose:p.fechar,
-      onConfirmar:function(){ d({type:"RETIRAR", lid:p.lid, ids:ids, por:s.usuario, assinatura:ass, codigo:true}); p.fechar(); }},
+      desabilitado: !ids.length || (!sozinha && (!codOk || !ass)), onClose:p.fechar,
+      onConfirmar:function(){ d({type:"RETIRAR", lid:p.lid, ids:ids, por:s.usuario, assinatura:ass, codigo:codOk, sozinha:sozinha}); p.fechar(); }},
+    // retirou sozinha: a representante veio na empresa e levou os kits; a funcion\u00e1ria logada faz a retirada junto. S\u00f3 marca.
+    e("label",{className:"flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm "+(sozinha ? "border-primary bg-primary/10" : "border-border hover:bg-muted/40")},
+      e("input",{type:"checkbox", checked:sozinha, onChange:alternaSozinha, className:"size-4 accent-primary"}),
+      e("span",{className:"flex-1"}, e("b",null,"Retirou sozinha"), e("span",{className:"ml-2 text-[12px] text-muted-foreground"},"Veio na empresa e levou os kits. Marca todos os kits prontos e dispensa c\u00f3digo e assinatura.")),
+      e(Icon,{n:"user", s:16, className:"text-primary"})),
     // 1) quais kits
     e("div",{className:"flex flex-col gap-1.5"},
       e("div",{className:"flex items-baseline justify-between"},

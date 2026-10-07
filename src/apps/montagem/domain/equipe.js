@@ -22,17 +22,36 @@ var BIPADORAS = [{id:9, nome:"Natasha", completo:"Natasha Ribeiro", mes:{n:180, 
   {id:22, nome:"Renata", mes:{n:96, e:15, faltas:2}}];
 var LISTAGENS_RESP = {id:23, nome:"Majorry"};
 var SUPERVISORA = {id:11, nome:"Deysiane"};
-var DIRETORIA = [{id:16, nome:"Marcus"}, {id:17, nome:"Nickolas"}];
+var DIRETORIA = [{id:16, nome:"Marcus"}, {id:17, nome:"Nickolas"}, {id:28, nome:"Lucas"}];
 var KITNOVO = {id:18, nome:"Michele"};
-var EQUIPE = MONTADORAS.concat(BIPADORAS,[SUPERVISORA],DIRETORIA,[KITNOVO],[LISTAGENS_RESP]);
+// Agendamento confere o dinheiro e a promissória do acerto; financeiro dá o OK de cada pagamento (Ana Maria faz os dois)
+var AGENDAMENTO = [{id:24, nome:"Ana Maria"}, {id:25, nome:"Mariana"}, {id:26, nome:"Tamara"}];
+var FINANCEIRO = [{id:27, nome:"Nayale"}];
+var ACAO_AGENDAMENTO = [24,25,26], ACAO_FINANCEIRO = [24,27];
+var EQUIPE = MONTADORAS.concat(BIPADORAS,[SUPERVISORA],DIRETORIA,[KITNOVO],[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
 function nomeDe(id){ var p = EQUIPE.find(function(x){return x.id===id;}); return p ? p.nome : "\u2014"; }
 function papelDe(id){
   if(id===SUPERVISORA.id || DIRETORIA.some(function(x){return x.id===id;})) return "supervisao";
   if(id===KITNOVO.id) return "kitnovo";
   if(id===LISTAGENS_RESP.id) return "listagens";
+  if(id===24) return "agendfin";
+  if(ACAO_AGENDAMENTO.indexOf(id)>=0) return "agendamento";
+  if(ACAO_FINANCEIRO.indexOf(id)>=0) return "financeiro";
   if(BIPADORAS.some(function(b){return b.id===id;})) return "bipadora";
   if(MONTADORAS.some(function(m){return m.id===id;})) return "montadora";
   return "supervisao";
 }
 
-export { MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };
+// Supervisão e diretoria podem tudo; agendamento e financeiro só as ações do seu setor
+function podeAgendar(id){ return ACAO_AGENDAMENTO.indexOf(id)>=0 || papelDe(id)==="supervisao"; }
+// O agendamento (Mariana, Tamara) não vê valores totais nem as contas: só quantidades. Quem tem o financeiro, a supervisão e a diretoria veem tudo.
+// Quem define a conta e confere os pagamentos do atendimento interno (Visão geral): Marcus, Nickolas, Lucas e Ana Maria
+var CONFERE_PAGAMENTOS = [16,17,28,24];
+function podeConferirPag(id){ return CONFERE_PAGAMENTOS.indexOf(id)>=0; }
+// Configuração das comissões (botão em Comissões): só Marcus, Ana Maria e Nayale
+var CONFIG_COMISSAO = [16,24,27];
+function podeConfigComissao(id){ return CONFIG_COMISSAO.indexOf(id)>=0; }
+function veTotais(id){ return papelDe(id)!=="agendamento"; }
+function podeFinanceiro(id){ return ACAO_FINANCEIRO.indexOf(id)>=0 || papelDe(id)==="supervisao"; }
+
+export { podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };

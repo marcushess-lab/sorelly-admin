@@ -6,6 +6,7 @@
 // Fica tudo na tela (conferindo e já liberada) até a listagem inteira concluir,
 // pra ela não se perder.
 import { condEstado, condVisiveisPre, condOkPre } from "@/apps/montagem/domain/condicionais";
+import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { TIPO_KIT } from "@/apps/montagem/domain/status";
 import { use } from "@/apps/montagem/state/context";
 import { Vazio } from "@/apps/montagem/ui/card";
@@ -30,11 +31,11 @@ function AddNum(p){
     e("button",{onClick:enviar, disabled:!v.trim(), className:"grid h-9 w-9 place-items-center rounded-lg bg-white/10 text-white disabled:opacity-40"},"+"));
 }
 function CardRevendedora(p){
-  var k = p.k, d = use().dispatch, nums = condVisiveisPre(k), tipo = TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit, ok = condOkPre(k);
+  var cx = use(), s = cx.state, k = p.k, d = cx.dispatch, nums = condVisiveisPre(k), tipo = TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit, ok = condOkPre(k);
   var liberada = k.status!=="precond";
   return e("div",{className:"flex flex-col gap-2.5 rounded-2xl bg-[#1C1C1E] p-3.5"+(liberada?" opacity-60":"")},
     e("div",{className:"flex items-baseline justify-between gap-2"},
-      e("b",{className:"truncate text-[14.5px]"}, k.prio && e("span",{className:"text-amber-300"},"★ "), k.rev),
+      e("b",{className:"truncate text-[14.5px]"}, k.prio && e("span",{className:"text-amber-300"},"★ "), k.rev, modalidadeDe(s, k.rev)==="prata" && e("span",{className:"ml-1.5 rounded-full bg-slate-300 px-1.5 py-px align-middle text-[9px] font-black tracking-wider text-slate-900"},"100% PRATA")),
       e("span",{className:"shrink-0 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-[#8E8E93]"}, tipo[1])),
     e("p",{className:"text-[12px] text-[#8E8E93]"}, k.bairro),
     e("div",{className:"flex flex-wrap gap-1.5"}, nums.map(function(n){ return e(ChipCond,{key:n, k:k, n:n}); }), !liberada && e(AddNum,{key:"add", k:k})),

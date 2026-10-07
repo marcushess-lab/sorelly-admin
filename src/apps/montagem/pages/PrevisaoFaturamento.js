@@ -168,17 +168,31 @@ function AbaPrevisaoFaturamento(){
           e("p",{className:"text-[11px]"},"Contas a pagar: os 12 meses já lançados de verdade. Faturamento: "+(mesesFaltando.length ? "faltam lançar "+mesesFaltando.join(", ")+"; " : "todos os meses fechados já foram lançados; ")+MESES_LONGO[(mes+1)%12]+" a "+MESES_LONGO[11]+" são projeção, pela janela de crescimento escolhida abaixo.")))),
     e(BlocoBarra,{t:"Crescimento de revendedoras", sub:"histórico do ano até agora + o gráfico dia a dia embaixo"},
       e("div",{className:"flex flex-col gap-2.5 p-3"},
-        // histórico do ano até agora (meses fechados + o mês atual, em andamento): de onde vêm os % usados na previsão
-        e(Tabela,{semLimite:true, min:"min-w-[36rem]", cols:[{t:"Mês",c:true},{t:"Revendedoras",c:true},{t:"Previstos",c:true},{t:"% previstos",c:true},{t:"Realizados",c:true},{t:"% realizados",c:true}]},
-          linhasHistorico.map(function(h,i){ var sit = h.atual ? SIT.atual : SIT.real;
-            var pctP = h.base>0 ? h.previstos/h.base*100 : 0, pctR = h.previstos>0 ? h.realizados/h.previstos*100 : 0;
-            return e("tr",{key:i, className:TR},
-              e(TD,{c:true, className:"font-semibold "+sit.cor, title:sit.lb}, MESES_LONGO[h.mes]),
-              e(TD,{c:true, className:MONO+" text-foreground"}, num(h.base)),
-              e(TD,{c:true, className:MONO+" text-foreground"}, num(h.previstos)),
-              e(TD,{c:true, className:MONO+" text-primary"}, N1(pctP)+"%"),
-              e(TD,{c:true, className:MONO+" text-foreground"}, num(h.realizados)),
-              e(TD,{c:true, className:MONO+" text-primary"}, N1(pctR)+"%")); })),
+        // histórico do ano até agora (meses fechados), a linha de média (base pra prever os próximos meses) e o mês atual em andamento
+        e(Tabela,{semLimite:true, min:"min-w-[36rem]", cols:[{t:"Mês",c:true},{t:"Revendedoras",c:true},{t:"% previstos",c:true},{t:"Previstos",c:true},{t:"% realizados",c:true},{t:"Realizados",c:true}]},
+          (function(){
+            var fechadasRows = linhasHistorico.filter(function(h){ return !h.atual; });
+            var atualRow = linhasHistorico.filter(function(h){ return h.atual; })[0];
+            var linha2 = function(h,i,destaque){ var sit = h.atual ? SIT.atual : SIT.real;
+              var pctP = h.base>0 ? h.previstos/h.base*100 : 0, pctR = h.previstos>0 ? h.realizados/h.previstos*100 : 0;
+              return e("tr",{key:i, className:TR},
+                e(TD,{c:true, className:"font-semibold "+sit.cor, title:sit.lb}, MESES_LONGO[h.mes]),
+                e(TD,{c:true, className:MONO+" text-foreground"}, num(h.base)),
+                e(TD,{c:true, className:MONO+" text-primary"}, N1(pctP)+"%"),
+                e(TD,{c:true, className:MONO+" text-foreground"}, num(h.previstos)),
+                e(TD,{c:true, className:MONO+" text-primary"}, N1(pctR)+"%"),
+                e(TD,{c:true, className:MONO+" text-foreground"}, num(h.realizados))); };
+            var mediaPctP = fechadasRows.length ? fechadasRows.reduce(function(t,h){ return t+(h.base>0?h.previstos/h.base*100:0); },0)/fechadasRows.length : 0;
+            var mediaPctR = fechadasRows.length ? fechadasRows.reduce(function(t,h){ return t+(h.previstos>0?h.realizados/h.previstos*100:0); },0)/fechadasRows.length : 0;
+            var linhaMedia = e("tr",{key:"media", className:TR+" bg-black/10"},
+              e(TD,{c:true, className:"font-semibold text-foreground"}, "Média"),
+              e(TD,{c:true, className:MONO+" text-muted-foreground"}, "—"),
+              e(TD,{c:true, className:MONO+" font-semibold text-primary"}, N1(mediaPctP)+"%"),
+              e(TD,{c:true, className:MONO+" text-muted-foreground"}, "—"),
+              e(TD,{c:true, className:MONO+" font-semibold text-primary"}, N1(mediaPctR)+"%"),
+              e(TD,{c:true, className:MONO+" text-muted-foreground"}, "—"));
+            return fechadasRows.map(function(h,i){ return linha2(h,i); }).concat([linhaMedia]).concat(atualRow ? [linha2(atualRow,"atual")] : []);
+          })()),
         proj.fechados.length<3 && e("p",{className:"text-[11.5px] text-warning"},"Ainda só "+proj.fechados.length+" mês(es) fechado(s) — quanto mais meses forem lançados, mais confiável fica a % usada na previsão.")),
       e("div",{className:"border-t border-border p-3"},
         e("button",{onClick:function(){setAbrirGrafico(!abrirGrafico);}, className:"flex w-full items-center justify-between gap-2 text-left"},
@@ -194,7 +208,7 @@ function AbaPrevisaoFaturamento(){
           e("label",{className:"flex items-center gap-1.5 text-[11.5px] font-semibold text-muted-foreground"},"Projetar até",
             e("select",{value:mesesProj, onChange:function(ev){setMesesProj(Number(ev.target.value));}, className:INPUT+" h-8! w-auto py-0! pl-2! pr-6! text-[12px]! font-semibold text-foreground"},
               opcoesProj.map(function(o){ return e("option",{key:o.v, value:o.v}, o.lb); }))),
-          e(GraficoColunasRevendedoras,{pontos:pontosGrafico}),
+          e(GraficoColunasRevendedoras,{pontos:pontosGrafico, opcoes:{janelas:JANELAS_GRAFICO_REV, indice:janelaGrafico, calcular:function(i){ return pontosRevendedoras(s, Object.assign({projetarMeses:mesesProj, janela:janela}, JANELAS_GRAFICO_REV[i])); }}}),
           e("p",{className:"text-[11px]"},"Barra cheia: histórico real. Barra clara/tracejada: previsão do dia 1 de cada mês até "+mesFinalLbl+", pela janela de crescimento escolhida acima — com uma queda sazonal de "+QUEDA_JANEIRO+" revendedoras em janeiro (sempre saem algumas no início do ano) e o crescimento normal de volta a partir de fevereiro. Faixas alternadas no fundo do gráfico marcam cada mês.")))),
     e(BlocoBarra,{t:"Ano inteiro, mês a mês", sub:anoStr+" e "+(ano+1)+" — consolidado (real) e pendente (a preencher) lado a lado, pra saber o que falta mandar"},
       e("div",{className:"p-3"},

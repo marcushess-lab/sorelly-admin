@@ -2,7 +2,8 @@
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { GraficoColunasRevendedoras } from "@/apps/montagem/components/grafico-revendedoras";
-import { isoOntem, pontosRevendedoras } from "@/apps/montagem/domain/financeiro";
+import { pontosRevendedoras } from "@/apps/montagem/domain/financeiro";
+import { isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT, MONO, NumInput } from "@/apps/montagem/ui/input";
@@ -15,21 +16,22 @@ function AbaRevendedorasDiarias(){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var datas = Object.keys(s.revendedorasDiario||{}).sort();
   var ultima = datas.length ? datas[datas.length-1] : null, ultimoValor = ultima ? s.revendedorasDiario[ultima] : 0;
-  var fdata = useState(isoOntem()), dataForm = fdata[0], setDataForm = fdata[1];
+  var hojeIso = isoDia(new Date());
   var fqtd = useState(ultimoValor), qtdForm = fqtd[0], setQtdForm = fqtd[1];
-  var salvar = function(){ d({type:"REV_LANCAR", data:dataForm, quantidade:qtdForm}); };
+  // uma atualização por dia (às 10h da manhã); sábado e domingo ficam no último valor
+  var feitoHoje = (s.revAtualizadoEm||{})[hojeIso], feitoHora = feitoHoje ? new Date(feitoHoje).toLocaleTimeString("pt-BR",{hour:"2-digit", minute:"2-digit"}) : "";
+  var salvar = function(){ if(!feitoHoje && qtdForm>0) d({type:"REV_LANCAR", data:hojeIso, quantidade:qtdForm, unico:true}); };
   var rotulo = "flex flex-col items-center gap-1 text-center text-[12.5px] font-semibold";
   var ultimos7 = datas.slice(-7).reverse();
   return e(React.Fragment,null,
-    e(PageHead,{t:"Revendedoras", sub:"Lançamento diário do total geral de revendedoras, sempre referente ao dia anterior. Fonte: DevMaster/admin. A Amanda preenche toda manhã; se ela faltar, o Lucas preenche."}),
+    e(PageHead,{t:"Revendedoras", sub:"Atualização diária do total geral de revendedoras: uma por dia, às 10h da manhã. Sábado e domingo ficam no último valor, não precisa lançar."}),
     e("div",{className:"grid grid-cols-1 gap-4 lg:grid-cols-2"},
-      e(BlocoBarra,{t:"Lançar o dia anterior"},
+      e(BlocoBarra,{t:"Atualização de hoje · "+hojeIso.split("-").reverse().join("/")},
         e("div",{className:"flex flex-col items-center gap-3 p-4"},
-          e("label",{className:rotulo},"Referente ao dia",
-            e("input",{type:"date", value:dataForm, max:isoOntem(), onChange:function(ev){setDataForm(ev.target.value);}, className:INPUT+" h-10! w-full text-center [color-scheme:dark]"})),
           e("label",{className:rotulo+" w-full"},"Quantidade de revendedoras (total geral)",
-            e(NumInput,{value:qtdForm, onChange:setQtdForm, className:"w-full! text-center!"})),
-          e(Btn,{v:"primary", ic:"save", className:"w-full", onClick:salvar},"Salvar lançamento"),
+            e(NumInput,{value:feitoHoje ? s.revendedorasDiario[hojeIso] : qtdForm, onChange:setQtdForm, className:"w-full! text-center!"+(feitoHoje ? " opacity-60" : "")})),
+          e(Btn,{v:"primary", ic:"save", className:"w-full", disabled:!!feitoHoje || !(qtdForm>0), onClick:salvar}, feitoHoje ? "✓ Atualizado hoje às "+feitoHora : "Atualizar hoje"),
+          feitoHoje && e("p",{className:"text-[12px] text-success"},"Só uma atualização por dia. A próxima é amanhã."),
           ultima && e("p",{className:"text-[12px]"},"Último lançamento: "+ultima.split("-").reverse().join("/")+" — "+ultimoValor+" revendedoras"))),
       e(BlocoBarra,{cor:"azul", t:"Últimos 7 lançamentos"},
         e("div",{className:"flex flex-col gap-1.5 p-3"},

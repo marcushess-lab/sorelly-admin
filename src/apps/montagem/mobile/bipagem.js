@@ -1,5 +1,6 @@
 // Sorelly Admin · montagem e bipagem — mobile/bipagem.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
+import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { TIPO_KIT } from "@/apps/montagem/domain/status";
 import { IPhone15 } from "@/apps/montagem/mobile/iphone";
 import { Avatar } from "@/apps/montagem/mobile/theme";
@@ -44,7 +45,7 @@ function AppBipagemRetirada(p){
             e("div",{className:"overflow-hidden rounded-2xl bg-[#1C1C1E]"}, prontos.map(function(k){
               return e("label",{key:k.id, className:"flex cursor-pointer items-center gap-3 border-b border-white/5 px-3 py-2.5 text-[14px] last:border-0"},
                 e("input",{type:"checkbox", checked:!!sel[k.id], onChange:function(){ var o = Object.assign({}, sel); o[k.id] = !o[k.id]; setSel(o); }, className:"size-5 accent-amber-400"}),
-                e("span",{className:"min-w-0 flex-1 truncate"}, k.rev), e("span",{className:"text-[12px] text-amber-200"}, (TIPO_KIT[k.tipoKit]||TIPO_KIT.acerto_kit)[1])); })),
+                e("span",{className:"min-w-0 flex-1 truncate"}, k.rev, modalidadeDe(s, k.rev)==="prata" && e("span",{className:"ml-1.5 rounded-full bg-slate-300 px-1.5 py-px align-middle text-[9px] font-black tracking-wider text-slate-900"},"100% PRATA")), e("span",{className:"text-[12px] text-amber-200"}, (TIPO_KIT[k.tipoKit]||TIPO_KIT.acerto_kit)[1])); })),
             e("button",{disabled:!ids.length, onClick:function(){ d({type:"SOLICITAR_RET", lid:l.id, ids:ids, por:bip.id}); },
               className:"h-12 rounded-2xl text-[15px] font-semibold disabled:opacity-40 "+OURO_APP}, "Solicitar retirada de "+ids.length+(ids.length===1?" kit":" kits")),
             e("p",{className:"px-1 text-center text-[12px] text-[#8E8E93]"},"A solicitação vai para o app da representante, que confirma o recebimento."))));

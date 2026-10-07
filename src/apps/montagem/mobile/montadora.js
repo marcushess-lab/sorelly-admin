@@ -1,6 +1,7 @@
 // Sorelly Admin · montagem e bipagem — mobile/montadora.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { Etiqueta } from "@/apps/montagem/components/etiqueta";
+import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { proximoPara, resumoMontadora } from "@/apps/montagem/domain/regras";
 import { kit } from "@/apps/montagem/domain/seed";
@@ -115,7 +116,8 @@ function CelListagens(){
         e("div",{className:"mb-1 h-1 overflow-hidden rounded-full bg-white/10"}, e("i",{className:"block h-full bg-linear-to-r "+c.grad, style:{width:(ks.length?prontos/ks.length*100:0)+"%"}})),
         ks.map(function(k){ return e("div",{key:k.id, className:"flex items-center gap-2 border-t border-white/5 py-1.5 text-[13px]"},
           e("span",{className:"size-2 shrink-0 rounded-full "+PONTO_CEL[STATUS_TP[k.status]], title:STATUS_LB[k.status]}),
-          e("span",{className:"flex-1 truncate"}, k.prio && e("span",{className:"text-amber-300"},"★ "), k.rev),
+          e("span",{className:"flex-1 truncate"}, k.prio && e("span",{className:"text-amber-300"},"★ "), k.rev,
+            modalidadeDe(s, k.rev)==="prata" && e("span",{className:"ml-1.5 rounded-full bg-slate-300 px-1.5 py-px align-middle text-[9px] font-black tracking-wider text-slate-900"},"100% PRATA")),
           e("span",{className:"text-[12px] text-[#8E8E93]"}, STATUS_LB[k.status])); })));
   }));
 }

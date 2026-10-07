@@ -23,14 +23,16 @@ var FATURAMENTO_DIARIO_DEMO = {   // dados reais passados pelo usuário; uma dat
   "2026-07-31":{recebido:1214587.01, acertos:1669, revendedoras:1834},
   "2026-08-31":{recebido:1361845.04, acertos:1741, revendedoras:1834},
   "2026-09-27":{recebido:1139192.78, acertos:1399, revendedoras:2007},
-  "2026-09-28":{recebido:1152731.48, acertos:1413, revendedoras:2007}   // 28/09/2026, mês em andamento — sem contagem nova de revendedoras nesta data, mantido o último número real (27/09)
+  "2026-09-28":{recebido:1152731.48, acertos:1413, revendedoras:2007},   // 28/09/2026, sem contagem nova de revendedoras nesta data, mantido o último número real (27/09)
+  "2026-09-30":{recebido:1446262.20, acertos:1809, revendedoras:2023}   // fechamento de Setembro (total do mês inteiro), passado pelo usuário em 01/10
 };
 // Meta mensal (vem do setor de Agendamento): revendedoras com kit no início do mês e quantos acertos eles previram para o mês inteiro.
 // Histórico de abertura por mês, passado pelo usuário (índice do mês: 0=Jan ... 8=Set).
 var META_MENSAL_DEMO = {"2026": {
   0:{base:1827, previstos:1754}, 1:{base:1750, previstos:1707}, 2:{base:1791, previstos:1757}, 3:{base:1780, previstos:1667},
   4:{base:1836, previstos:1763}, 5:{base:1902, previstos:1826}, 6:{base:1834, previstos:1793}, 7:{base:1834, previstos:1815},
-  8:{base:1932, previstos:1889}
+  8:{base:1932, previstos:1889},   // base e previstos de Setembro ainda são o valor antigo — a confirmar (ver pergunta ao usuário)
+  9:{base:2023, previstos:1976}   // base = fechamento de Setembro (2.023), previstos passados pelo usuário em 01/10
 }};
 // Vendido na ponta (relatório de notas fiscais), passado pelo usuário mês a mês. "comBrindes" = venda com brindes e trocas;
 // "semBrinde" = preço de venda sem brinde. Custo (com/sem brinde) ainda não veio — fica de fora até ele mandar.
@@ -113,7 +115,7 @@ function projetarAno(s, anoStr, janelaIdx, metaPct){
     }
     if(i<mesAtual){ porMes.push({mes:i, valor:0, tipo:"real"}); continue; }
     var dia1 = new Date(Number(anoStr), i, 1), dias = Math.round((dia1-hoje)/86400000);
-    var revProj = revHoje + CRESCIMENTO_REVENDEDORAS[janelaIdx].dia*dias;
+    var revProj = revHoje + taxaCrescimento(s, janelaIdx)*dias;
     var fatorSazonal = FATOR_SAZONAL[i] || 1;   // aplicado sobre a média de faturamento por revendedora, não sobre a contagem de previstos
     var prevProj = Math.round(revProj*ratioPB), realProj = Math.round(prevProj*ratioRPUsado), fatProj = realProj*mediaAcertoHist*fatorSazonal;
     porMes.push({mes:i, valor:fatProj, tipo:"projetado", revendedoras:Math.round(revProj), previstos:prevProj, realizados:realProj, sazonal:fatorSazonal!==1?fatorSazonal:null});
@@ -147,7 +149,7 @@ function projetarVariosAnos(s, anoInicial, totalMeses, janelaIdx, metaPct){
     }
     if(anoI===anoAtual && i<mesAtual){ porMes.push({ano:anoI, mes:i, valor:0, tipo:"real", revendedoras:0, realizados:0}); continue; }
     var dia1 = new Date(anoI, i, 1), dias = Math.round((dia1-hoje)/86400000);
-    var revProj = revHoje + CRESCIMENTO_REVENDEDORAS[janelaIdx].dia*dias;
+    var revProj = revHoje + taxaCrescimento(s, janelaIdx)*dias;
     var fatorSazonal = FATOR_SAZONAL[i] || 1;
     var prevProj = Math.round(revProj*ratioPB), realProj = Math.round(prevProj*ratioRPUsado), fatProj = realProj*mediaAcertoHist*fatorSazonal;
     porMes.push({ano:anoI, mes:i, valor:fatProj, tipo:"projetado", revendedoras:Math.round(revProj), previstos:prevProj, realizados:realProj, sazonal:fatorSazonal!==1?fatorSazonal:null});
@@ -160,13 +162,52 @@ var JANELAS_GRAFICO_REV = [{lb:"7 dias", ultimosDias:7},{lb:"15 dias", ultimosDi
 // início do ano várias revendedoras saem (fim de contrato, balanço); em fevereiro o crescimento normal já volta a valer —
 // por enquanto um número fixo, o usuário vai confirmar com dados reais de janeiros anteriores
 var QUEDA_JANEIRO = 100;
+// Crescimento médio POR DIA, calculado dos lançamentos reais (nada de número fixo): variação líquida na janela ÷ dias da janela.
+// Dias sem lançamento (fim de semana) entram como "sem aumento". Sem histórico suficiente, cai nos valores antigos de CRESCIMENTO_REVENDEDORAS.
+function crescimentoPorDia(s, dias){
+  var hist = completarDias(s.revendedorasDiario || {}), ks = Object.keys(hist).sort();
+  if(ks.length<2 || !(dias>1)) return null;   // dias = quantos pontos o filtro mostra (7 dias = 7 pontos, 6 intervalos)
+  var ult = ks.length-1, ini = Math.max(0, ult-(dias-1));
+  return (hist[ks[ult]]-hist[ks[ini]])/(ult-ini);
+}
+var DIAS_JANELA = [7,15,30,60,90];
+function taxaCrescimento(s, idx){
+  var t = null;
+  if(idx<DIAS_JANELA.length) t = crescimentoPorDia(s, DIAS_JANELA[idx]);
+  else { var h = new Date(), ano = h.getFullYear(), m = h.getMonth()-1; if(m<0){ m = 11; ano--; }   // "Último mês": o mês fechado anterior
+    var r = resumoMensalRevendedoras(s, ano)[m]; t = r && r.delta!==null ? r.delta/new Date(ano, m+1, 0).getDate() : null; }
+  return t===null || t===undefined ? CRESCIMENTO_REVENDEDORAS[idx].dia : t;
+}
+// um lançamento por dia útil; sábado, domingo e qualquer dia sem lançamento ficam no último valor (até hoje)
+function isoLocal(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function completarDias(hist){
+  var ks = Object.keys(hist).sort(); if(!ks.length) return hist;
+  var ate = isoLocal(new Date()); if(ks[ks.length-1]>ate) ate = ks[ks.length-1];
+  var d = new Date(ks[0]+"T12:00:00"), out = {}, ultimo = hist[ks[0]], iso;
+  for(iso = isoLocal(d); iso<=ate; d.setDate(d.getDate()+1), iso = isoLocal(d)){ if(hist[iso]!==undefined) ultimo = hist[iso]; out[iso] = ultimo; }
+  return out;
+}
+// Visão geral: quantas revendedoras começaram e terminaram cada mês do ano (o mês atual vai até hoje, em tempo real)
+function resumoMensalRevendedoras(s, ano){
+  var hist = completarDias(s.revendedorasDiario || {}), ks = Object.keys(hist).sort(), hojeIso = isoLocal(new Date()), out = [];
+  var valorAte = function(iso){ var v = null; for(var i=0;i<ks.length;i++){ if(ks[i]<=iso) v = hist[ks[i]]; else break; } return v; };
+  for(var m=0;m<12;m++){
+    var ym = ano+"-"+String(m+1).padStart(2,"0"), primeiro = ym+"-01", ultimo = ym+"-"+String(new Date(ano, m+1, 0).getDate()).padStart(2,"0");
+    var futuro = primeiro>hojeIso, atual = hojeIso.slice(0,7)===ym;
+    var ini = valorAte(primeiro); if(ini===null){ var k1 = ks.find(function(k){ return k.slice(0,7)===ym; }); ini = k1 ? hist[k1] : null; }
+    var fim = futuro ? null : valorAte(atual ? hojeIso : ultimo);
+    var delta = ini!==null && fim!==null ? fim-ini : null;
+    out.push({mes:m, ini:ini, fim:fim, delta:delta, pct:ini ? delta/ini*100 : null, atual:atual, futuro:futuro});
+  }
+  return out;
+}
 // monta os pontos (dia a dia) da quantidade de revendedoras, pra usar no gráfico. opts.ultimosDias/mesAtual/tudo escolhem a janela
 // de dias reais mostrados (padrão: tudo); opts.desde filtra por data (usado na Visão Geral, só o ano atual); opts.projetarMeses
 // acrescenta um ponto por mês futuro (dia 1), usando a janela de crescimento escolhida (opts.janela); pode passar do fim do
 // ano — em janeiro (de qualquer ano) entra a queda sazonal, e o crescimento normal volta a partir de fevereiro.
 function pontosRevendedoras(s, opts){
   opts = opts || {};
-  var hist = s.revendedorasDiario || {};
+  var hist = completarDias(s.revendedorasDiario || {});
   var todasDatas = Object.keys(hist).sort();
   var datas = todasDatas;
   if(opts.ultimosDias) datas = todasDatas.slice(-opts.ultimosDias);
@@ -176,10 +217,14 @@ function pontosRevendedoras(s, opts){
   var pts = datas.map(function(dt){ return {data:dt, v:hist[dt], tipo:"real"}; });
   if(opts.projetarMeses && todasDatas.length){
     var ultimaData = todasDatas[todasDatas.length-1], ultimoValor = hist[ultimaData], hoje = new Date(ultimaData+"T00:00:00");
+    // média diária conforme o filtro escolhido (7/15/30/60/90 dias, mês atual ou história completa)
+    var diasFiltro = opts.ultimosDias || (opts.mesAtual ? (new Date().getDate()>1 ? new Date().getDate() : 30) : opts.tudo ? todasDatas.length : 30);
+    var taxaPontos = crescimentoPorDia(s, diasFiltro);
+    if(taxaPontos===null) taxaPontos = CRESCIMENTO_REVENDEDORAS[opts.janela||2].dia;
     for(var mf=1; mf<=opts.projetarMeses; mf++){
       var alvo = new Date(hoje.getFullYear(), hoje.getMonth()+mf, 1);
       var dias = Math.round((alvo-hoje)/86400000);
-      var v = Math.round(ultimoValor+CRESCIMENTO_REVENDEDORAS[opts.janela].dia*dias);
+      var v = Math.round(ultimoValor+taxaPontos*dias);
       if(alvo.getMonth()===0) v -= QUEDA_JANEIRO;
       pts.push({data:alvo.toISOString().slice(0,10), v:v, tipo:"projetado"});
     }
@@ -187,4 +232,4 @@ function pontosRevendedoras(s, opts){
   return pts;
 }
 
-export { MESES_LONGO, CONTAS_PAGAR_DEMO, FATURAMENTO_DIARIO_DEMO, META_MENSAL_DEMO, VENDIDO_PONTA_DEMO, CNPJS_CONTAS_PAGAS, CONTAS_PAGAS_DIARIO_DEMO, isoOntem, CRESCIMENTO_REVENDEDORAS, mesesFechados, FATOR_SAZONAL, projetarAno, projetarVariosAnos, JANELAS_GRAFICO_REV, QUEDA_JANEIRO, pontosRevendedoras };
+export { MESES_LONGO, CONTAS_PAGAR_DEMO, FATURAMENTO_DIARIO_DEMO, META_MENSAL_DEMO, VENDIDO_PONTA_DEMO, CNPJS_CONTAS_PAGAS, CONTAS_PAGAS_DIARIO_DEMO, isoOntem, CRESCIMENTO_REVENDEDORAS, mesesFechados, FATOR_SAZONAL, projetarAno, projetarVariosAnos, JANELAS_GRAFICO_REV, QUEDA_JANEIRO, pontosRevendedoras, resumoMensalRevendedoras, taxaCrescimento, crescimentoPorDia };

@@ -29,27 +29,35 @@ function kit(lid, rev, bairro, alvo, prio, ex){
 function novoDia(){
   seq = 0;
   var dataHoje = isoDia(new Date());
-  var L = [
-    {id:"L1", rep:"Dayanne", destino:"Curitiba", viagem:false, horario:"10:00", data:dataHoje, fechada:false, retiradas:[]},
-    {id:"L1B", rep:"Dayanne", destino:"Curitiba", viagem:false, horario:"13:00", data:dataHoje, fechada:false, retiradas:[]},
-    {id:"L2", rep:"Lysie", destino:"Curitiba", viagem:false, horario:"10:00", data:dataHoje, fechada:false, retiradas:[]},
-    {id:"L4", rep:"Jessica", destino:"Curitiba", viagem:false, horario:"15:00", data:dataHoje, fechada:false, retiradas:[]}
-  ];
-  // Base de demonstra\u00e7\u00e3o enxuta (2026-09-30, a pedido do Marcus): 3 listagens s\u00f3, poucas revendedoras por
-  // representante, pra facilitar edi\u00e7\u00e3o manual. Mais revendedoras entram depois, uma a uma, pelo Kits novos.
-  var K = [
-    kit("L1","Andrielle Taborda","Tatuquara",12000,1,{endereco:"Rua Enette Dubard, 1150 - Tatuquara, Curitiba - PR", st:{status:"bipado",montId:1,iniM:hoje(8,5),fimM:hoje(8,34),bipId:9,iniB:hoje(8,40),fimB:hoje(8,45),valorReal:12300}}),
-    kit("L1","Silvana Ramos","S\u00edtio Cercado",8000,1,{endereco:"Rua Padre Anchieta, 1785 - Bigorrilho, Curitiba - PR", st:{status:"montado",montId:2,iniM:hoje(8,10),fimM:hoje(8,41)}}),
-    kit("L1","Fernanda Lopes","Cabral",9000,0,{endereco:"Rua General Carneiro, 480 - Cabral, Curitiba - PR", st:{status:"bipando",montId:3,iniM:hoje(8,15),fimM:hoje(8,42),bipId:12,iniB:hoje(9,10)}}),
-    kit("L1","Juliana Prado","Cristo Rei",7000,0,{endereco:"Rua Mateus Leme, 900 - Cristo Rei, Curitiba - PR", st:{status:"montado",montId:1,iniM:hoje(8,20),fimM:hoje(8,50)}}),
-    kit("L1B","Camila Duarte","Uberaba",8500,0,{endereco:"Rua Doutor Faivre, 620 - Uberaba, Curitiba - PR", st:{status:"bipado",montId:2,iniM:hoje(9,0),fimM:hoje(9,25),bipId:9,iniB:hoje(9,30),fimB:hoje(9,36),valorReal:8500}}),
-    kit("L1B","Renata Silva","Boa Vista",6000,0,{endereco:"Rua Nilo Pe\u00e7anha, 340 - Boa Vista, Curitiba - PR"}),
-
-    kit("L2","Rosana Kaminski","Port\u00e3o",10000,1,{st:{status:"bipado",montId:5,iniM:hoje(8,2),fimM:hoje(8,30),bipId:10,iniB:hoje(8,35),fimB:hoje(8,39),valorReal:9800}}),
-    kit("L2","Cl\u00e1udia Wosniak","\u00c1gua Verde",20000,1)
-  ];
-  [["Elis\u00e2ngela Faria","Boqueir\u00e3o",12000,1],["Ros\u00e2ngela Pinto","Xaxim",8000,1]
-  ].forEach(function(r){ K.push(kit("L4",r[0],r[1],r[2],r[3],{sem:true})); });
+  // Base de demonstração (2026-10-06, a pedido do Marcus): 1 listagem por representante em cada um dos 3 dias
+  // (hoje, amanhã e depois), 5 revendedoras fictícias cada, nada montado nem bipado, pra testar o fluxo do zero.
+  var REPS = [["Dayanne","10:00"],["Lysie","10:00"],["Marcus Hess","12:00"],["Jessica","15:00"],["Priscila","09:00"],["Rosana","14:00"]];
+  var NOMES1 = ["Adriana","Beatriz","Carolina","Débora","Eliane","Flávia","Gabriela","Heloísa","Isabela","Jaqueline","Karina","Letícia","Mônica","Natália","Olívia","Paula","Quitéria","Rafaela","Sabrina","Tereza","Úrsula","Vivian","Wanessa","Yasmin"];
+  var SOBRE = ["Almeida","Barbosa","Cardoso","Dias","Esteves","Ferraz","Gomes","Hoffmann","Ito","Jardim","Klein","Machado","Nogueira","Oliveira","Pereira","Ramalho","Santos","Teixeira","Vasques","Zanetti"];
+  var BAIRROS = ["Tatuquara","Cabral","Cristo Rei","Uberaba","Boa Vista","Portão","Água Verde","Xaxim","Boqueirão","Batel","Santa Felicidade","Bacacheri"];
+  var VALORES = [8000,6000,10000,7000,9000,12000];
+  // as primeiras revendedoras do dia de hoje são as que já têm perfil/endereço nos apps de demonstração
+  var FIXOS = {
+    Dayanne:[["Andrielle Taborda","Tatuquara",12000,1,"Rua Enette Dubard, 1150 - Tatuquara, Curitiba - PR"],["Silvana Ramos","Sítio Cercado",8000,1,"Rua Padre Anchieta, 1785 - Bigorrilho, Curitiba - PR"],
+      ["Fernanda Lopes","Cabral",9000,0,"Rua General Carneiro, 480 - Cabral, Curitiba - PR"],["Juliana Prado","Cristo Rei",7000,0,"Rua Mateus Leme, 900 - Cristo Rei, Curitiba - PR"],
+      ["Camila Duarte","Uberaba",8500,0,"Rua Doutor Faivre, 620 - Uberaba, Curitiba - PR"]],
+    Lysie:[["Rosana Kaminski","Portão",10000,1,null],["Cláudia Wosniak","Água Verde",20000,1,null]],
+    Jessica:[["Elisângela Faria","Boqueirão",12000,1,null],["Rosângela Pinto","Xaxim",8000,1,null]]
+  };
+  var L = [], K = [], g = 0;
+  [0,1,2].forEach(function(di){
+    var dt = isoDia(new Date(Date.now() + di*86400000));
+    REPS.forEach(function(r, ri){
+      var id = "L"+(ri+1)+(di ? "-D"+di : "");
+      L.push({id:id, rep:r[0], destino:"Curitiba", viagem:false, horario:r[1], data:dt, fechada:false, retiradas:[]});
+      for(var j=0;j<5;j++){
+        var fx = di===0 && FIXOS[r[0]] ? FIXOS[r[0]][j] : null;
+        if(fx) K.push(kit(id, fx[0], fx[1], fx[2], fx[3], fx[4] ? {endereco:fx[4]} : {}));
+        else K.push(kit(id, NOMES1[g%24]+" "+SOBRE[(g*7+3)%20], BAIRROS[g%12], VALORES[g%6], j===0 ? 1 : 0));
+        g++;
+      }
+    });
+  });
   K.forEach(function(k){ var l=L.find(function(x){return x.id===k.lid;}); l.n=(l.n||0)+1; k.ordem=l.n; });
   // Metade dos kits do dia já vem com o valor calculado (simula quem a Deysiane já processou hoje,
   // incluindo condicional já conferida); a outra metade fica pendente de verdade, pra testar o "Definir".

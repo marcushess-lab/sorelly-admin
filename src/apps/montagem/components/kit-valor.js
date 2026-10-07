@@ -41,7 +41,7 @@ function LinhaTempo(p){
   if(k.motivo) ev.push(["Ajuste pedido", k.motivo]);
   if(k.supEm && !k.motivo) ev.push(["Confer\u00eancia","Liberado por "+nomeDe(k.supId)+" \u00e0s "+hora(k.supEm)]);
   if(k.iniB) ev.push(["Bipagem", nomeDe(k.bipId)+", in\u00edcio "+hora(k.iniB)+(k.fimB?", fim "+hora(k.fimB)+", valor "+BK(k.valorReal)+(k.corrigido?" (corrigido)":""):", em andamento")]);
-  if(k.retEm) ev.push(["Retirada","\u00c0s "+hora(k.retEm)+", entregue por "+nomeDe(k.retPor)+(k.retConf?", confirmada com "+k.retConf:"")]);
+  if(k.retEm) ev.push(["Retirada","\u00c0s "+hora(k.retEm)+", entregue por "+nomeDe(k.retPor)+(k.retSozinha?", retirou sozinha":"")+(k.retConf?", confirmada com "+k.retConf:"")]);
   return e("ol",{className:"ml-2 flex flex-col gap-1.5 border-l-2 border-primary pl-4"},
     ev.map(function(x,i){ return e("li",{key:i, className:"flex gap-3 text-sm"}, e("b",{className:"w-32 shrink-0 text-muted-foreground"}, x[0]), e("span",null, x[1])); }));
 }
